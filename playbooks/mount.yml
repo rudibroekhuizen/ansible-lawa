@@ -1,0 +1,32 @@
+---
+- name: Mount extra volume
+  block:
+    - name: Create /data folder
+      ansible.builtin.file:
+        state: directory
+        path: /data
+        owner: root
+        group: root
+        mode: u+rwx,g+rx,o+rx
+    - name: Define device-name extra disk
+      ansible.builtin.shell: 'set -o pipefail && lsblk | egrep "vdb|xvdf|nvme1n1|sdb" | cut -f1 -d" "'
+      args:
+        executable: /bin/bash
+      register: devicename
+      changed_when: devicename.rc != 0
+      check_mode: false
+    - name: Create EXT4 filesystem on new volume
+      community.general.filesystem:
+        fstype: ext4
+        dev: "/dev/{{ devicename.stdout }}"
+        resizefs: true
+        opts: -m 0
+    - name: Mount extra volume
+      ansible.posix.mount:
+        path: /data
+        fstype: ext4
+        src: "/dev/{{ devicename.stdout }}"
+        state: mounted
+  tags: mount
+  when: mount_data_disk | default(false)
+...

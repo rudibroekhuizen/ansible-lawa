@@ -1,0 +1,20 @@
+---
+galaxy_info:
+  role_name: ubuntu_server
+  namespace: naturalis
+  author: Marten Vijn
+  description: Base configuration for Ubuntu servers
+  company: Naturalis Biodiversity Center
+  issue_tracker_url: https://gitlab.com/naturalis/lib/ansible/ansible-role-ubuntu-server/-/issues
+  license: Apache-2.0
+  min_ansible_version: 2.9
+  platforms:
+    - name: Ubuntu
+      versions:
+        - bionic
+        - focal
+  galaxy_tags:
+    - server
+    - base
+dependencies: []
+...

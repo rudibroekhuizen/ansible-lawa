@@ -1,0 +1,22 @@
+Unattended-Upgrade::Allowed-Origins {
+  "${distro_id}:${distro_codename}";
+  "${distro_id}:${distro_codename}-security";
+  "${distro_id}ESMApps:${distro_codename}-apps-security";
+  "${distro_id}ESM:${distro_codename}-infra-security";
+};
+
+{% if unattended_updates_package_blacklist|length %}
+Unattended-Upgrade::Package-Blacklist {
+{%   for package in unattended_updates_package_blacklist %}
+  "{{ package }}";
+{%   endfor %}
+};
+{% endif %}
+
+Unattended-Upgrade::AutoFixInterruptedDpkg "{{ unattended_updates_autofix_interrupted_dpkg }}";
+Unattended-Upgrade::MinimalSteps "{{ unattended_updates_minimalsteps }}";
+Unattended-Upgrade::InstallOnShutdown "{{ unattended_updates_install_on_shutdown }}";
+Unattended-Upgrade::Remove-Unused-Kernel-Packages "{{ unattended_updates_remove_unused_kernel_packages }}";
+Unattended-Upgrade::Remove-Unused-Dependencies "{{ unattended_updates_remove_unused_dependencies }}";
+Unattended-Upgrade::Automatic-Reboot "{{ unattended_updates_automatic_reboot }}";
+Unattended-Upgrade::Automatic-Reboot-Time "{{ unattended_updates_automatic_reboot_time }}";

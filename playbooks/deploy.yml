@@ -1,0 +1,4 @@
+---
+- name: The app
+  ansible.builtin.import_playbook: lawa.yml
+...

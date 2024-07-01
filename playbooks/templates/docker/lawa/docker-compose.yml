@@ -1,0 +1,148 @@
+---
+services:
+  #traefik:
+  #  image: registry.gitlab.com/naturalis/lib/docker/traefik:v3.0
+  #  restart: unless-stopped
+  #  depends_on:
+  #    - docker-socket-proxy
+  #  networks:
+  #    - web
+  #    - docker-socket-proxy
+  #    - backend
+  #  ports:
+  #    - "0.0.0.0:80:80"
+  #    - "0.0.0.0:443:443"
+  #    - "127.0.0.1:8079:8080"
+  #  environment:
+  #    - TRAEFIK_AWS_ACCESS_KEY_ID
+  #    - TRAEFIK_AWS_SECRET_ACCESS_KEY
+  #  volumes:
+  #    - ./traefik/traefik.yml:/etc/traefik/traefik.yml
+  #    - ./letsencrypt:/letsencrypt
+
+  #docker-socket-proxy:
+  #  image: tecnativa/docker-socket-proxy:${DOCKERPROXY_VERSION:-latest}
+  #  restart: unless-stopped
+  #  networks:
+  #    - docker-socket-proxy
+  #  volumes:
+  #    - /var/run/docker.sock:/var/run/docker.sock:ro,delegated
+  #  environment:
+  #    CONTAINERS: 1
+
+  clickhouse:
+    image: clickhouse/clickhouse-server:${CLICKHOUSE_VERSION}
+    restart: unless-stopped
+    ports:
+      # - "9000:9000" # for native clickhouse client
+      - "8123:8123" # for HTML client
+      - "9005:9005" # for postgres client
+    #networks:
+    #  - backend
+    volumes:
+      #- clickhouse_data:/var/lib/clickhouse
+      - ./clickhouse/etc/clickhouse-server/users.d/users.xml:/etc/clickhouse-server/users.d/users.xml
+      - ./clickhouse/etc/clickhouse-server/config.d/named_collections.xml:/etc/clickhouse-server/config.d/named_collections.xml
+      - ./clickhouse/scripts:/var/lib/clickhouse/user_files
+      # - ./clickhouse/docker-entrypoint-initdb.d:/docker-entrypoint-initdb.d
+    environment:
+      - CLICKHOUSE_USER
+      - CLICKHOUSE_PASSWORD
+      - CLICKHOUSE_DB
+
+  postgres:
+    build: ./postgres
+    restart: unless-stopped
+    environment:
+      - POSTGRES_USER
+      - POSTGRES_PASSWORD
+      - POSTGRES_DB
+    #networks:
+    #  - backend
+    ports:
+      - "5432:5432"
+    volumes:
+      #- postgres_data:/var/lib/postgresql/data
+      - ./postgres/docker-entrypoint-initdb.d:/docker-entrypoint-initdb.d
+      - ./postgres/conf.d/${POSTGRES_CONFD:-default}:/conf.d
+      - ./postgres/scripts:/var/lib/postgresql/scripts
+
+  #ubuntu:
+  #  build:
+  #    context: ./ubuntu
+  #    args:
+  #      UBUNTU_VERSION: ${UBUNTU_VERSION}
+  #  networks:
+  #    - backend
+  #  ports:
+  #    - "8050:8050" # Dash plotly
+  #  volumes:
+  #    - ./ubuntu:/app
+  #  tty: true
+  #  environment:
+  #    - CLICKHOUSE_HOST
+  #    - CLICKHOUSE_USER
+  #    - CLICKHOUSE_PASSWORD
+
+  #mcli:
+  #  build:
+  #    context: ./mcli
+  #    args:
+  #      - MINIO_CLIENT_VERSION=${MINIO_CLIENT_VERSION}
+  #  container_name: "${COMPOSE_PROJECT_NAME:-composeproject}_mcli"
+  #  restart: unless-stopped
+  #  tty: true
+  #  ports:
+  #    - "9000-9005"
+  #  networks:
+  #    - backend
+  #  environment:
+  #    - MINIO_ROOT_USER
+  #    - MINIO_ROOT_PASSWORD
+
+  app:
+    build:
+      context: ./app
+    #networks:
+    #  - backend
+    ports:
+      - "8050:8050" # Dash plotly
+    environment:
+      - CLICKHOUSE_HOST
+      - CLICKHOUSE_USER
+      - CLICKHOUSE_PASSWORD
+
+  streamlit:
+    build:
+      context: ./streamlit
+    #networks:
+    #  - backend
+    ports:
+      - "8501:8501" # Streamlit
+    environment:
+      - CLICKHOUSE_HOST
+      - CLICKHOUSE_USER
+      - CLICKHOUSE_PASSWORD
+
+#volumes:
+#  clickhouse_data:
+#    driver: local
+#    driver_opts:
+#      type: none
+#      o: bind
+#      device: /data/clickhouse
+#  postgres_data:
+#    driver: local
+#    driver_opts:
+#      type: none
+#      o: bind
+#      device: /data/postgres
+
+networks:
+  web:
+    internal: false
+  docker-socket-proxy:
+    internal: true
+  backend:
+    internal: false
+...

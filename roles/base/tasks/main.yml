@@ -1,0 +1,134 @@
+---
+- name: Set hostname
+  ansible.builtin.hostname:
+    name: "{{ inventory_hostname }}"
+  tags: hostname
+
+- name: Wait for any possibly running unattended upgrade to finish
+  ansible.builtin.raw: systemd-run --property="After=apt-daily.service apt-daily-upgrade.service" --wait /bin/true
+  changed_when: false
+
+- name: Install base packages
+  ansible.builtin.apt:
+    state: present
+    update_cache: true
+    name: "{{ base_packages }}"
+  tags: packages
+
+- name: Install packages for physical hosts
+  ansible.builtin.apt:
+    state: present
+    update_cache: true
+    name: "{{ base_packages_physical }}"
+  when: ansible_virtualization_role == 'host'
+  tags: packages
+
+- name: Create /etc/systemd/timesyncd.conf.d/
+  ansible.builtin.file:
+    dest: /etc/systemd/timesyncd.conf.d/
+    state: directory
+    mode: 0755
+    owner: root
+    group: root
+  tags: time
+
+- name: Make sure directory for persistent journal files exists
+  ansible.builtin.file:
+    dest: /var/log/journal
+    state: directory
+    mode: 02755
+    owner: root
+    group: systemd-journal
+  notify: restart_journald
+  tags: journal
+
+- name: Configure journald
+  ansible.builtin.template:
+    src: journald.conf.j2
+    dest: /etc/systemd/journald.conf
+    mode: 0644
+    owner: root
+    group: root
+  notify: restart_journald
+  tags: journal
+
+- name: Set NTP servers
+  ansible.builtin.template:
+    src: ntp_cloud-init.conf
+    dest: /etc/systemd/timesyncd.conf.d/cloud-init.conf
+    mode: 0644
+    owner: root
+    group: root
+  notify: restart_ntp
+  tags: time
+
+- name: Set timezone
+  community.general.timezone:
+    name: "{{ timezone }}"
+  tags: time
+
+- name: Configure manual DNS servers
+  include_tasks:
+    file: dns.yml
+    apply:
+      tags: dns
+  when:
+    - (ubuntu_dns_servers is defined)
+    - (ubuntu_dns_servers | length)
+  tags: dns
+
+- name: Include unattended
+  include_tasks: unattended.yml
+  when: auto_update | default(true)
+  tags: auto_update
+
+- name: Disable firewall
+  community.general.ufw:
+    state: disabled
+  when: not firewall | bool
+  tags: firewall
+
+- name: Enable and configure firewall
+  when: firewall | bool
+  tags: firewall
+  block:
+    - name: Configure logging
+      community.general.ufw:
+        logging: "{{ firewall_logging }}"
+
+    - name: Limit SSH connections
+      community.general.ufw:
+        rule: limit
+        port: ssh
+        proto: tcp
+
+    - name: Deny everything and enable firewall
+      community.general.ufw:
+        state: enabled
+        policy: deny
+
+- name: Add systemd-networkd-wait-online fix
+  include_tasks: systemd-networkd-wait-online.yml
+  when: systemd_networkd_wait_online_fix | default(false)
+
+- name: Add fwupd-refresh fix
+  when: ubuntu_fwupd_refresh_fix
+  tags: fix
+  block:
+    - name: Create override directory
+      ansible.builtin.file:
+        dest: /etc/systemd/system/fwupd-refresh.service.d
+        state: directory
+        mode: 0755
+        owner: root
+        group: root
+
+    - name: Add override config to fix fwupd-refresh
+      ansible.builtin.copy:
+        src: files/fwupd-refresh.service.d-override.conf
+        dest: /etc/systemd/system/fwupd-refresh.service.d/override.conf
+        mode: 0644
+        owner: root
+        group: root
+      notify: daemon-reload
+...

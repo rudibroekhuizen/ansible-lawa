@@ -1,0 +1,16 @@
+# Stage
+
+[production:children]
+lawa_prd
+
+[development:children]
+lawa_dev
+
+
+# Function
+
+[lawa_dev]
+lawa-a-dev
+
+[lawa_prd]
+lawa-a-prd

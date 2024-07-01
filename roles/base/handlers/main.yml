@@ -1,0 +1,34 @@
+---
+- name: Restart timesyncd service
+  ansible.builtin.systemd:
+    name: systemd-timesyncd
+    state: restarted
+  listen: restart_ntp
+
+- name: Reload, enable and start maintenance reboot timer
+  ansible.builtin.systemd:
+    name: maintenance-reboot.timer
+    enabled: true
+    state: restarted
+    daemon_reload: true
+  listen: start_maintenance_timer
+
+- name: Restart journald service
+  ansible.builtin.systemd:
+    name: systemd-journald
+    state: restarted
+  listen: restart_journald
+
+- name: daemon-reload
+  ansible.builtin.systemd:
+    daemon_reload: true
+
+- name: Reload networkctl
+  ansible.builtin.command: /usr/bin/networkctl reload
+  listen: reconfig_dns
+
+- name: Restart systemd-resolved
+  ansible.builtin.systemd:
+    name: systemd-resolved.service
+    state: restarted
+  listen: reconfig_dns

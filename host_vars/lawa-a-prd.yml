@@ -1,0 +1,4 @@
+---
+ansible_host: 145.136.249.109
+postgres_confd: 4c_8r 
+...

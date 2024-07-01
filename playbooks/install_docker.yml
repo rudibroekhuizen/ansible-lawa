@@ -1,0 +1,57 @@
+---
+- name: Update Apt Cache
+  ansible.builtin.apt:
+    update_cache: true
+    cache_valid_time: 3600
+
+- name: Install Pre-requisite Pkgs
+  ansible.builtin.apt:
+    pkg:
+      - ca-certificates
+      - curl
+      - gnupg
+      - lsb-release
+      - openssl
+      - python3-pip
+
+- name: Add signing key
+  ansible.builtin.apt_key:
+    url: "https://download.docker.com/linux/ubuntu/gpg"
+    state: present
+
+- name: Add repository into sources list
+  ansible.builtin.apt_repository:
+    repo: deb [arch=amd64] https://download.docker.com/linux/ubuntu "{{ ansible_distribution_release }}" stable
+    state: present
+    filename: docker
+
+- name: Install Docker
+  ansible.builtin.apt:
+    pkg:
+      - docker-ce=5:24.0.7-1~ubuntu.22.04~jammy
+      - docker-ce-cli=5:24.0.7-1~ubuntu.22.04~jammy
+      - containerd.io=1.6.26-1
+
+- name: Start Docker Process
+  ansible.builtin.service:
+    name: docker
+    state: started
+    enabled: true
+
+- name: Add current user to docker group
+  ansible.builtin.user:
+    name: "{{ lookup('env', 'USER') }}"
+    groups: docker
+    append: true
+
+    # - name: Add "{{ ansible_user }}" to docker group
+    #   ansible.builtin.user:
+    #     name: "ubuntu"
+    #     groups: docker
+    #     append: true
+
+- name: Install Pip docker-py pkg
+  ansible.builtin.pip:
+    name: docker
+...
+

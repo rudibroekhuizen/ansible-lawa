@@ -1,0 +1,6 @@
+---
+# See: https://ansible-lint.readthedocs.io/en/latest/configuring.html
+enable_list:
+  - fqcn-builtins
+  - yaml
+...
