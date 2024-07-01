@@ -1,3 +1,12 @@
+roles
+roles/*
+collections
+collections/*
+*.retry
+*.sw?
+.cache
+.vscode
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
