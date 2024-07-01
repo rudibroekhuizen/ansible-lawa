@@ -66,6 +66,7 @@ services:
       - ./postgres/docker-entrypoint-initdb.d:/docker-entrypoint-initdb.d
       - ./postgres/conf.d/${POSTGRES_CONFD:-default}:/conf.d
       - ./postgres/scripts:/var/lib/postgresql/scripts
+      - lawa_data:/lawa_data
 
   #ubuntu:
   #  build:
@@ -107,6 +108,8 @@ services:
     #  - backend
     ports:
       - "8050:8050" # Dash plotly
+    volumes:
+      - lawa_data:/lawa_data
     environment:
       - CLICKHOUSE_HOST
       - CLICKHOUSE_USER
@@ -124,7 +127,13 @@ services:
       - CLICKHOUSE_USER
       - CLICKHOUSE_PASSWORD
 
-#volumes:
+volumes:
+  lawa_data:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: /data/lawa
 #  clickhouse_data:
 #    driver: local
 #    driver_opts:
