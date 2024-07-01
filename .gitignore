@@ -7,6 +7,9 @@ collections/*
 .cache
 .vscode
 
+lawa_images/
+lawa_tracks/
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
