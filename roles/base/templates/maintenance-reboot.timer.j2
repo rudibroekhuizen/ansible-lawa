@@ -1,8 +1,0 @@
-[Unit]
-Description=Reboot when required during maintenance window
-
-[Timer]
-OnCalendar={{ maintenance_reboot_schedule }}
-
-[Install]
-WantedBy=timers.target
