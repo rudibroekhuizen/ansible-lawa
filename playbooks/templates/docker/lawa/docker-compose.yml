@@ -115,18 +115,6 @@ services:
       - CLICKHOUSE_USER
       - CLICKHOUSE_PASSWORD
 
-  streamlit:
-    build:
-      context: ./streamlit
-    #networks:
-    #  - backend
-    ports:
-      - "8501:8501" # Streamlit
-    environment:
-      - CLICKHOUSE_HOST
-      - CLICKHOUSE_USER
-      - CLICKHOUSE_PASSWORD
-
 volumes:
   lawa_data:
     driver: local
