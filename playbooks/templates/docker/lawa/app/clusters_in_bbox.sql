@@ -5,7 +5,7 @@ WITH raw AS
                     a AS
                     (
                         SELECT [COLUMNS('h3') APPLY uniqCombined(12)] AS my_array
-                        FROM trackbook_enriched
+                        FROM lawa.trackbook_enriched
                         WHERE lat BETWEEN %s AND %s AND lon BETWEEN %s AND %s
                     ),
                     b AS
@@ -40,7 +40,7 @@ WITH raw AS
             count(*) AS cnt,
             res,
             [h3_1, h3_3, h3_5, h3_7, h3_9, h3_11, h3_13, h3_15][res] AS h3_index
-        FROM trackbook_enriched
+        FROM lawa.trackbook_enriched
         WHERE lat BETWEEN %s AND %s AND lon BETWEEN %s AND %s
         GROUP BY
             3,

@@ -1,7 +1,7 @@
 FROM postgis/postgis:15-master
 
 RUN apt-get update && \
-    apt-get install -y sudo vim curl wget jq git unzip    
+    apt-get install -y sudo vim curl wget jq git unzip python3-pip
 
 # Add pg_config to path
 ENV PATH="${PATH}:/usr/bin"
@@ -35,6 +35,9 @@ ARG PG_H3_VERSION=4.1.2
 
 RUN pgxn install "h3==${PG_H3_VERSION}"
 
+
+# Webdav4
+RUN pip install webdav4 fsspec
 
 # Timescaledb
 #RUN curl -s https://packagecloud.io/install/repositories/timescale/timescaledb/script.deb.sh | sudo bash

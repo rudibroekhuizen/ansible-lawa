@@ -9,3 +9,5 @@ Jinja2
 plotly==5.22.0
 psycopg
 pillow
+sshfs
+webdav4

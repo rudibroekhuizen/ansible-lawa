@@ -9,14 +9,16 @@ POSTGRES_USER=${POSTGRES_USER}
 POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
 
 
-# Check if a directory argument is provided
-if [ $# -eq 0 ]; then
-  echo "Error: Please specify a directory containing GPX files as an argument."
-  exit 1
-fi
+## Check if a directory argument is provided
+#if [ $# -eq 0 ]; then
+#  echo "Error: Please specify a directory containing GPX files as an argument."
+#  exit 1
+#fi
 
 # Get the directory path from the first argument
 gpx_dir="$1"
+
+gpx_dir='/var/lib/postgresql/scripts/trackbook'
 
 # Loop through all files with .gpx extension in the specified directory
 for file in "$gpx_dir"/*.gpx; do

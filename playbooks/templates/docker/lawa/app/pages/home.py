@@ -136,8 +136,9 @@ layout = html.Div(
 
 
 @callback(
-    [Output("datatable", "children"), Output("images", "children")],
-    [Input("map", "bounds")],
+    Output("datatable", "children"),
+    Output("images", "children"),
+    Input("map", "bounds"),
     # Input("my_range_slider", "value")
 )
 def get_records(bounds, recordedby=None):

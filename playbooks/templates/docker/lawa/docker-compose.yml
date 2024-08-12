@@ -37,8 +37,8 @@ services:
       # - "9000:9000" # for native clickhouse client
       - "8123:8123" # for HTML client
       - "9005:9005" # for postgres client
-    #networks:
-    #  - backend
+    networks:
+      - backend
     volumes:
       #- clickhouse_data:/var/lib/clickhouse
       - ./clickhouse/etc/clickhouse-server/users.d/users.xml:/etc/clickhouse-server/users.d/users.xml
@@ -57,16 +57,19 @@ services:
       - POSTGRES_USER
       - POSTGRES_PASSWORD
       - POSTGRES_DB
-    #networks:
-    #  - backend
+      - WEBDAV_ENDPOINT_URL
+      - WEBDAV_USER
+      - WEBDAV_PASSWORD
+    networks:
+      - backend
     ports:
       - "5432:5432"
     volumes:
       #- postgres_data:/var/lib/postgresql/data
+      - lawa_data:/var/lib/postgresql/lawa
       - ./postgres/docker-entrypoint-initdb.d:/docker-entrypoint-initdb.d
       - ./postgres/conf.d/${POSTGRES_CONFD:-default}:/conf.d
       - ./postgres/scripts:/var/lib/postgresql/scripts
-      - lawa_data:/lawa_data
 
   #ubuntu:
   #  build:
@@ -104,24 +107,26 @@ services:
   app:
     build:
       context: ./app
-    #networks:
-    #  - backend
+    networks:
+      - backend
     ports:
       - "8050:8050" # Dash plotly
     volumes:
-      - lawa_data:/lawa_data
+      - lawa_data:/app/assets/images/
     environment:
       - CLICKHOUSE_HOST
       - CLICKHOUSE_USER
       - CLICKHOUSE_PASSWORD
+      - POSTGRES_HOST
+      - POSTGRES_DB
+      - POSTGRES_USER
+      - POSTGRES_PASSWORD
+      - WEBDAV_ENDPOINT_URL
+      - WEBDAV_USER
+      - WEBDAV_PASSWORD
 
 volumes:
   lawa_data:
-    driver: local
-    driver_opts:
-      type: none
-      o: bind
-      device: /data/lawa
 #  clickhouse_data:
 #    driver: local
 #    driver_opts:

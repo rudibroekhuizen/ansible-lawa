@@ -42,6 +42,7 @@ def create_connection():
     )
     return conn
 
+
 # Postgres connection
 conn = create_connection()
 
@@ -168,14 +169,14 @@ def extract_metadata_and_save(image_path):
                 )
 
             # Insert data into clickhouse
-            table_name = "image_exif"
+            table_name = "lawa.image_exif"
             columns = ["path", "exif_data"]
             data = [(image_path, json.dumps(merged_data, default=str))]
 
             client.insert(table_name, data, column_names=columns)
 
             # Close the connection (optional, but recommended for proper resource management)
-            #client.disconnect()
+            # client.disconnect()
 
             # Insert data into postgres
             with conn.cursor() as cur:
@@ -185,8 +186,9 @@ def extract_metadata_and_save(image_path):
                 )
                 conn.commit()
 
+
 # Directory containing the images
-image_directory = "assets"
+image_directory = "assets/images/"
 
 # Loop over all the image files in the directory
 for filename in os.listdir(image_directory):
