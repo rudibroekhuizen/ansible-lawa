@@ -18,7 +18,7 @@ POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
 # Get the directory path from the first argument
 gpx_dir="$1"
 
-gpx_dir='/var/lib/postgresql/scripts/trackbook'
+gpx_dir='/tmp/trackbook/'
 
 # Loop through all files with .gpx extension in the specified directory
 for file in "$gpx_dir"/*.gpx; do
