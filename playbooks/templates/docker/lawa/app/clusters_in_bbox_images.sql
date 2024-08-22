@@ -1,11 +1,11 @@
 WITH raw AS
     (
-        WITH (
+        WITH optimal_resolution AS (
                 WITH
                     a AS
                     (
                         SELECT [COLUMNS('h3') APPLY uniqCombined(12)] AS my_array
-                        FROM lawa.image_exif_enriched
+                        FROM image_exif_enriched
                         WHERE lat BETWEEN %s AND %s AND lon BETWEEN %s AND %s
                     ),
                     b AS
@@ -15,32 +15,32 @@ WITH raw AS
                     ),
                     c AS
                     (
-                        SELECT range(1, 9) AS rng
+                        SELECT range(1, 9) AS range_index
                     ),
                     d AS
                     (
                         SELECT
                             my_array,
                             diff,
-                            rng
+                            range_index
                         FROM a, b, c
                     )
-                SELECT rng
+                SELECT range_index
                 FROM d
                 ARRAY JOIN
                     my_array,
                     diff,
-                    rng
+                    range_index
                 ORDER BY
                     diff ASC,
-                    rng DESC
+                    range_index DESC
                 LIMIT 1
-            ) AS res
+            )
         SELECT
             count(*) AS cnt,
-            res,
-            [h3_1, h3_3, h3_5, h3_7, h3_9, h3_11, h3_13, h3_15][res] AS h3_index
-        FROM lawa.image_exif_enriched
+            range_index,
+            [h3_1, h3_3, h3_5, h3_7, h3_9, h3_11, h3_13, h3_15][range_index] AS h3_index
+        FROM image_exif_enriched, optimal_resolution
         WHERE lat BETWEEN %s AND %s AND lon BETWEEN %s AND %s
         GROUP BY
             3,
@@ -48,7 +48,7 @@ WITH raw AS
     )
   SELECT
       cnt,
-      res,
+      range_index,
       h3ToGeo(assumeNotNull(h3_index)).2 AS latitude,
       h3ToGeo(assumeNotNull(h3_index)).1 AS longitude
 FROM raw

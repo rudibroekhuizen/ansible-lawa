@@ -42,9 +42,6 @@ stylesheets = [
     "https://unpkg.com/@mantine/nprogress@7/styles.css",
 ]
 
-
-
-
 # Configure logging to print to console
 logging.basicConfig(level=logging.INFO)
 
@@ -69,16 +66,10 @@ client = clickhouse_connect.get_client(
     database=clickhouse_db,
 )
 
-
-
-
 icons = {
     "github": "ion:logo-github",
     "tools": "bi:tools",
 }
-
-
-
 
 def create_link(icon, href, text=""):
     return dmc.Anchor(
@@ -152,8 +143,6 @@ app_shell = dmc.AppShell(
 )
 
 app.layout = dmc.MantineProvider(app_shell)
-
-
 
 
 @callback(
