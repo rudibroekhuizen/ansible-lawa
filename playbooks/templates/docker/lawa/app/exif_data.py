@@ -47,6 +47,26 @@ def create_connection():
 conn = create_connection()
 
 
+def resize_images_in_directory(image_path, scale_factor=0.25):
+    try:
+        with Image.open(image_path) as img:
+            width, height = img.size
+
+            new_width = int(width * scale_factor)
+            new_height = int(height * scale_factor)
+            resized_img = img.resize((new_width, new_height))
+
+            # Resize the image
+            resized_img = img.resize((new_width, new_height))
+
+            # Save the resized image back to the same file path
+            resized_img.save(image_path)
+
+            print(f"Resized and saved: {image_path}")
+    except Exception as e:
+        print(f"Failed to resize {image_path}: {e}")
+
+
 # Function to decode binary data
 def decode_binary(tag, value):
     if isinstance(value, bytes):
@@ -195,3 +215,5 @@ for filename in os.listdir(image_directory):
     if filename.lower().endswith((".jpg", ".jpeg", ".JPG")):
         image_path = os.path.join(image_directory, filename)
         extract_metadata_and_save(image_path)
+        resize_images_in_directory(image_path, scale_factor=0.25)
+
