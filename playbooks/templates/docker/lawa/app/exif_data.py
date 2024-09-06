@@ -215,4 +215,4 @@ for filename in os.listdir(image_directory):
     if filename.lower().endswith((".jpg", ".jpeg", ".JPG")):
         image_path = os.path.join(image_directory, filename)
         extract_metadata_and_save(image_path)
-        resize_images_in_directory(image_path, scale_factor=0.25)
+        # resize_images_in_directory(image_path, scale_factor=0.25)
