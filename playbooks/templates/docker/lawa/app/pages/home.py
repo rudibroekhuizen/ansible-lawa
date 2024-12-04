@@ -223,9 +223,10 @@ def get_clusters_in_bbox(bounds):
     return [
         dl.CircleMarker(
             center=[row["latitude"], row["longitude"]],
-            radius=5,
+            radius=2,
             fill=True,
-            fillOpacity=0.7,
+            opacity=0.5,
+            fillOpacity=0.5,
             children=[dl.Tooltip(f"Number of objects: {row['cnt']}")],
         )
         for index, row in df.iterrows()
@@ -274,7 +275,8 @@ def get_clusters_in_bbox(bounds):
             center=[row["latitude"], row["longitude"]],
             radius=5,
             fill=True,
-            fillOpacity=0.7,
+            opacity=0.6,
+            fillOpacity=0.6,
             color="red",
             children=[dl.Tooltip(f"Number of objects: {row['cnt']}")],
         )
