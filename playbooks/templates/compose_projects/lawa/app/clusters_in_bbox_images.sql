@@ -7,6 +7,8 @@ WITH raw AS
                         SELECT [COLUMNS('h3') APPLY uniqCombined(12)] AS my_array
                         FROM image_exif_enriched
                         WHERE lat BETWEEN %s AND %s AND lon BETWEEN %s AND %s
+                        AND time BETWEEN %s AND %s
+
                     ),
                     b AS
                     (
@@ -42,6 +44,7 @@ WITH raw AS
             [h3_1, h3_3, h3_5, h3_7, h3_9, h3_11, h3_13, h3_15][range_index] AS h3_index
         FROM image_exif_enriched, optimal_resolution
         WHERE lat BETWEEN %s AND %s AND lon BETWEEN %s AND %s
+        AND time BETWEEN %s AND %s
         GROUP BY
             3,
             2
@@ -51,4 +54,4 @@ WITH raw AS
       range_index,
       h3ToGeo(assumeNotNull(h3_index)).2 AS latitude,
       h3ToGeo(assumeNotNull(h3_index)).1 AS longitude
-FROM raw LIMIT 500
+FROM raw 

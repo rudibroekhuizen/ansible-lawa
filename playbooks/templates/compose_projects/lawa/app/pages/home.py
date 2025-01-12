@@ -28,6 +28,10 @@ from jinja2 import Template
 import plotly.express as px
 import numpy
 import psycopg
+import plotly.graph_objects as go
+from datetime import datetime
+from dash.exceptions import PreventUpdate
+
 
 register_page(__name__, path="/")
 
@@ -78,31 +82,38 @@ def create_connection():
 # Postgres connection
 conn = create_connection()
 
-base_map = dl.Map(
-    style={"height": "50vh", "zIndex": 10},
-    id="map",
-    center=[50.8503, 4.3517],
-    zoom=2,
-    children=[
-        dl.TileLayer(),
-        dl.LayerGroup(id="df_clusters"),
-        dl.LayerGroup(id="df_clusters_images"),
-    ],
-)
+PLOTLY_FMT = "%Y-%m-%d %H:%M:%S.%f"  # example: 2021-03-25 11:44:31.8968
+PLOTLY_FMT_SEC = "%Y-%m-%d %H:%M:%S"  # example: 2021-03-25 11:44:31
+PLOTLY_FMT_MIN = "%Y-%m-%d %H:%M"  # example: 2021-03-25 11:44
+PLOTLY_FMT_DAY = "%Y-%m-%d"  # example: 2021-03-25
 
-YEAR_BOUND_INF, YEAR_BOUND_SUP, YEAR_INCREMENT = 1500, 2024, 50
 
-date_range = dmc.RangeSlider(
-    id="date_range",
-    marks=[
-        {"value": i, "label": i}
-        for i in range(YEAR_BOUND_INF, YEAR_BOUND_SUP, YEAR_INCREMENT)
-    ],
-    min=YEAR_BOUND_INF,
-    max=YEAR_BOUND_SUP,
-    value=[2000, 2024],
-    mb=30,
-)
+def plotly_to_datetime(plotly_string):
+    fmts = [PLOTLY_FMT, PLOTLY_FMT_SEC, PLOTLY_FMT_MIN, PLOTLY_FMT_DAY]
+    for fmt in fmts:
+        try:
+            dt = datetime.strptime(plotly_string, fmt)
+            return dt.strftime("%Y-%m-%d")  # Format output as 'YYYY-MM-DD'
+            # return datetime.strptime(plotly_string, fmt).year
+        except ValueError:
+            continue
+    return None
+    # raise ValueError('Could not parse datetime from "{}"'.format(plotly_string))
+
+
+# YEAR_BOUND_INF, YEAR_BOUND_SUP, YEAR_INCREMENT = 1500, 2024, 50
+
+# date_range = dmc.RangeSlider(
+#     id="date_range",
+#     marks=[
+#         {"value": i, "label": i}
+#         for i in range(YEAR_BOUND_INF, YEAR_BOUND_SUP, YEAR_INCREMENT)
+#     ],
+#     min=YEAR_BOUND_INF,
+#     max=YEAR_BOUND_SUP,
+#     value=[2000, 2024],
+#     mb=30,
+# )
 
 layout = html.Div(
     children=[
@@ -111,13 +122,43 @@ layout = html.Div(
             spacing={"base": 10, "sm": "xl"},
             verticalSpacing={"base": "md", "sm": "xl"},
             children=[
-                html.Div(base_map),
+                dl.Map(
+                    style={"height": "50vh", "zIndex": 10},
+                    id="map",
+                    center=[50.8503, 4.3517],
+                    zoom=2,
+                    children=[
+                        dl.TileLayer(),
+                        dl.LayerGroup(id="df_clusters"),
+                        dl.LayerGroup(id="df_clusters_images"),
+                    ],
+                ),
                 dmc.Stack(
                     [
-                        dcc.Graph(id="count_per_year"),
-                        date_range,
+                        dmc.Text(id="selected_date_range"),
+                        dcc.Graph(
+                            id="count_per_day",
+                            config={
+                                "modeBarButtonsToRemove": [
+                                    "select2d",
+                                    "lasso2d",
+                                ],  # Remove lasso and rectangle select
+                                "displayModeBar": True,  # Display the mode bar
+                            },
+                        ),
+                        dmc.Text(
+                            "A nonexistent object was used in an `Output` of a Dash callback",
+                            id="output-selected-range",
+                            style={"display": "none"},
+                        ),
                     ]
                 ),
+                # dmc.Stack(
+                #     [
+                #         dcc.Graph(id="count_per_day"),
+                #         date_range,
+                #     ]
+                # ),
             ],
             mb=30,
         ),
@@ -134,8 +175,9 @@ layout = html.Div(
     ],
 )
 
+
 @callback(
-    Output("count_per_year", "figure"),
+    Output("count_per_day", "figure"),
     # Output("intermediate-value-form", "data"),
     Input("map", "bounds"),
     Input("output-selected-range", "children"),
@@ -145,7 +187,7 @@ layout = html.Div(
     # Input("multi_select_collection", "value"),
     # Input("text_input_recordedby", "value"),
 )
-def get_count_per_year(
+def get_count_per_day(
     bounds,
     date_range,
     # mode
@@ -167,28 +209,29 @@ def get_count_per_year(
 
     # logging.info(f"date_range: {date_range}")
 
-    with open("count_per_year.sql", "r") as file:
+    with open("count_per_day.sql", "r") as file:
         template = Template(file.read())
-        sql_query = template.render(
-            mode=mode,
-        )
+        sql_query = template.render()
     result = client.query(sql_query, parameters=parameters)
+    # result = client.query(sql_query)
 
-    column_names = ["year", "cnt"]
+    column_names = ["day", "cnt"]
 
     df = pd.DataFrame(result.result_rows, columns=column_names)
 
     fig = go.Figure(
         go.Scatter(
-            x=df["year"],
+            x=df["day"],
             y=df["cnt"],
-            # mode='markers",
-            mode="lines+markers",
+            mode="markers",
+            # mode="lines+markers",
             # marker_color="blue"
         )
     )
 
     # logging.info(df)
+    # logging.info(sql_query)
+    # logging.info(parameters)
 
     # fig.layout.template = 'plotly_dark'
 
@@ -216,7 +259,8 @@ def get_count_per_year(
             # rangeslider=dict(visible=True),
             # range=date_range or [1500, 2000],
             type="date",
-            tickformat="%Y",
+            # tickformat="%Y",
+            tickformat="%Y-%m-%d",
         ),
         yaxis=dict(
             fixedrange=True, autorange=True  # Prevent vertical zooming and panning
@@ -227,21 +271,74 @@ def get_count_per_year(
     return fig
 
 
+# Callback to capture and display the x-axis range
+@callback(
+    Output("output-selected-range", "children"),
+    Input("count_per_day", "relayoutData"),
+    # State('range-store', 'data')
+)
+def display_selected_range(relayoutData):
+    # Check if x-axis range is defined in relayoutData
+    start_date = None
+    end_date = None
+
+    # logging.info(relayoutData)
+
+    if relayoutData:
+        # logging.info(f"relayoutData: {relayoutData}")
+        # Handle both formats of x-axis range data
+        if "xaxis.range" in relayoutData:
+            start_date, end_date = relayoutData["xaxis.range"]
+            sd = plotly_to_datetime(start_date)
+            ed = plotly_to_datetime(end_date)
+
+            return sd, ed
+        elif "xaxis.range[0]" in relayoutData and "xaxis.range[1]" in relayoutData:
+            start_date = relayoutData["xaxis.range[0]"]
+            end_date = relayoutData["xaxis.range[1]"]
+            sd = plotly_to_datetime(start_date)
+            ed = plotly_to_datetime(end_date)
+
+            # logging.info(f"Start: {start_date}, {sd}")
+            # logging.info(f"End: {end_date}, {ed}")
+            return sd, ed
+
+        else:
+            raise PreventUpdate
+
+        # Filter data if start_date and end_date are available
+        # if start_date and end_date:
+        #     # return f"Selected Range: {start_date} to {end_date}"
+        #     return sd, ed
+
+    # return "Select a range to see data."
+    return "2024-01-01", "2025-01-01"
+    # return stored_range.get('xaxis.range', [1500, 2000])
+
+
 @callback(
     Output("datatable", "children"),
     Output("images", "children"),
     Input("map", "bounds"),
+    Input("output-selected-range", "children"),
     # Input("my_range_slider", "value")
 )
-def get_records(bounds, recordedby=None):
+def get_records(bounds, date_range):
     if bounds is None:
         bounds = [[-90, -180], [90, 180]]
 
-    parameters = (bounds[0][0], bounds[1][0], bounds[0][1], bounds[1][1])
+    parameters = (
+        bounds[0][0],
+        bounds[1][0],
+        bounds[0][1],
+        bounds[1][1],
+        date_range[0],
+        date_range[1],
+    )
 
     with open("get_records.sql", "r") as file:
         template = Template(file.read())
-        sql_query = template.render(recordedby=recordedby)
+        sql_query = template.render()
 
     result = client.query(sql_query, parameters=parameters)
     column_names = ["path", "time", "lat", "lon", "make", "model", "lens_model"]
@@ -279,10 +376,11 @@ def get_records(bounds, recordedby=None):
 @callback(
     Output("df_clusters", "children"),
     Input("map", "bounds"),
+    Input("output-selected-range", "children"),
     # Input("my_range_slider", "value"),
     # Input("my-dynamic-dropdown", "value")
 )
-def get_clusters_in_bbox(bounds):
+def get_clusters_in_bbox(bounds, date_range):
     if bounds is None:
         bounds = [[-90, -180], [90, 180]]
 
@@ -292,10 +390,14 @@ def get_clusters_in_bbox(bounds):
         bounds[1][0],
         bounds[0][1],
         bounds[1][1],
+        date_range[0],
+        date_range[1],
         bounds[0][0],
         bounds[1][0],
         bounds[0][1],
         bounds[1][1],
+        date_range[0],
+        date_range[1],
     )
     with open("clusters_in_bbox.sql", "r") as file:
         template = Template(file.read())
@@ -329,23 +431,27 @@ def get_clusters_in_bbox(bounds):
 @callback(
     Output("df_clusters_images", "children"),
     Input("map", "bounds"),
+    Input("output-selected-range", "children"),
     # Input("my_range_slider", "value"),
     # Input("my-dynamic-dropdown", "value")
 )
-def get_clusters_in_bbox(bounds):
+def get_clusters_in_bbox(bounds, date_range):
     if bounds is None:
         bounds = [[-90, -180], [90, 180]]
 
-    # parameters = (bounds[0][0], bounds[1][0], bounds[0][1], bounds[1][1], my_range_slider[0], my_range_slider[1], bounds[0][0], bounds[1][0], bounds[0][1], bounds[1][1], my_range_slider[0], my_range_slider[1])
     parameters = (
         bounds[0][0],
         bounds[1][0],
         bounds[0][1],
         bounds[1][1],
+        date_range[0],
+        date_range[1],
         bounds[0][0],
         bounds[1][0],
         bounds[0][1],
         bounds[1][1],
+        date_range[0],
+        date_range[1],
     )
     with open("clusters_in_bbox_images.sql", "r") as file:
         template = Template(file.read())
@@ -374,3 +480,14 @@ def get_clusters_in_bbox(bounds):
         )
         for index, row in df.iterrows()
     ]
+
+
+@callback(
+    Output("selected_date_range", "children"),
+    Input("output-selected-range", "children"),
+)
+def print_data_range(date_range):
+
+    start_date, end_date = date_range[0], date_range[1]
+    date_range_str = f"Selected date range: {start_date} to {end_date}"
+    return date_range_str
