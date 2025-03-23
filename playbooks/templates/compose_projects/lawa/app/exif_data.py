@@ -5,6 +5,11 @@ import json
 import clickhouse_connect
 from clickhouse_connect import common
 import psycopg
+import logging
+
+# Configure logging
+logging.basicConfig(filename='error.log', level=logging.ERROR,
+                    format='%(asctime)s - %(levelname)s - %(message)s')
 
 # ClickHouse configurations
 clickhouse_db = os.getenv("CLICKHOUSE_DB")
@@ -214,5 +219,11 @@ image_directory = "assets/images/"
 for filename in os.listdir(image_directory):
     if filename.lower().endswith((".jpg", ".jpeg", ".JPG")):
         image_path = os.path.join(image_directory, filename)
-        extract_metadata_and_save(image_path)
+        print(image_path)
+        try:
+          extract_metadata_and_save(image_path)
+        except Exception as e:
+          logger = logging.getLogger(__name__)
+          logger.error(f"Error {e}, {image_path}")
+
         # resize_images_in_directory(image_path, scale_factor=0.25)
