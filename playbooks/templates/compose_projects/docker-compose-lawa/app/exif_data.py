@@ -5,6 +5,11 @@ import json
 import clickhouse_connect
 from clickhouse_connect import common
 import psycopg
+import logging
+
+# Configure logging
+logging.basicConfig(filename='error.log', level=logging.ERROR,
+                    format='%(asctime)s - %(levelname)s - %(message)s')
 
 # ClickHouse configurations
 clickhouse_db = os.getenv("CLICKHOUSE_DB")
@@ -45,6 +50,26 @@ def create_connection():
 
 # Postgres connection
 conn = create_connection()
+
+
+def resize_images_in_directory(image_path, scale_factor=0.25):
+    try:
+        with Image.open(image_path) as img:
+            width, height = img.size
+
+            new_width = int(width * scale_factor)
+            new_height = int(height * scale_factor)
+            resized_img = img.resize((new_width, new_height))
+
+            # Resize the image
+            resized_img = img.resize((new_width, new_height))
+
+            # Save the resized image back to the same file path
+            resized_img.save(image_path)
+
+            print(f"Resized and saved: {image_path}")
+    except Exception as e:
+        print(f"Failed to resize {image_path}: {e}")
 
 
 # Function to decode binary data
@@ -194,4 +219,11 @@ image_directory = "assets/images/"
 for filename in os.listdir(image_directory):
     if filename.lower().endswith((".jpg", ".jpeg", ".JPG")):
         image_path = os.path.join(image_directory, filename)
-        extract_metadata_and_save(image_path)
+        print(image_path)
+        try:
+          extract_metadata_and_save(image_path)
+        except Exception as e:
+          logger = logging.getLogger(__name__)
+          logger.error(f"Error {e}, {image_path}")
+
+        # resize_images_in_directory(image_path, scale_factor=0.25)

@@ -42,14 +42,11 @@ stylesheets = [
     "https://unpkg.com/@mantine/nprogress@7/styles.css",
 ]
 
-
-
-
 # Configure logging to print to console
 logging.basicConfig(level=logging.INFO)
 
 # ClickHouse configurations
-clickhouse_db = os.getenv('CLICKHOUSE_DB')
+clickhouse_db = os.getenv("CLICKHOUSE_DB")
 clickhouse_host = os.getenv("CLICKHOUSE_HOST")
 clickhouse_user = os.getenv("CLICKHOUSE_USER")
 clickhouse_pass = os.getenv("CLICKHOUSE_PASSWORD")
@@ -69,15 +66,10 @@ client = clickhouse_connect.get_client(
     database=clickhouse_db,
 )
 
-
-
-
 icons = {
     "github": "ion:logo-github",
     "tools": "bi:tools",
 }
-
-
 
 
 def create_link(icon, href, text=""):
@@ -111,7 +103,9 @@ header = dmc.Group(
         dmc.Text(["LAWA"], size="xl", fw=700),
         dmc.Text("Vanessa en Rudi stappen door", visibleFrom="sm", size="xl"),
         dmc.Text(
-            create_link(icons["github"], "https://github.com/rudibroekhuizen/ansible-lawa"),
+            create_link(
+                icons["github"], "https://github.com/rudibroekhuizen/ansible-lawa"
+            ),
             ml="auto",
         ),
     ],
@@ -123,17 +117,17 @@ header = dmc.Group(
 
 navbar = dmc.ScrollArea(
     [
-        #multi_select_classification,
-        #multi_select_collection,
+        # multi_select_classification,
+        # multi_select_collection,
     ],
     offsetScrollbars=True,
     type="scroll",
     style={"height": "100%"},
 )
 
-
-app = Dash(__name__, use_pages=True, external_stylesheets=stylesheets)
-#app = Dash(__name__, use_pages=True)
+app = Dash(
+    external_stylesheets=stylesheets, use_pages=True, suppress_callback_exceptions=True
+)
 
 app_shell = dmc.AppShell(
     [
@@ -154,8 +148,6 @@ app_shell = dmc.AppShell(
 app.layout = dmc.MantineProvider(app_shell)
 
 
-
-
 @callback(
     Output("app-shell", "navbar"),
     Input("burger-button", "opened"),
@@ -170,9 +162,9 @@ def navbar_is_open(opened, navbar):
 @callback(
     Output("burger-button", "opened"),
     Input("map", "bounds"),
-    Input("date_range", "value"),
-    #Input("multi_select", "value"),
-    #Input("multi_select_collection", "value"),
+    # Input("date_range", "value"),
+    # Input("multi_select", "value"),
+    # Input("multi_select_collection", "value"),
     prevent_initial_call=True,
 )
 def navbar_is_open(*_):

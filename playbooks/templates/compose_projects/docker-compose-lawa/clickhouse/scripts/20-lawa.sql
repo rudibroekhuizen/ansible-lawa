@@ -1,5 +1,3 @@
-
-
 -- Create enriched table to get the table description
 CREATE TABLE lawa.image_exif_temp
 ENGINE = MergeTree
@@ -36,7 +34,7 @@ FROM a;
 
 
 -- To get the table description:
---SHOW TABLE image_exif_temp; 
+-- SHOW TABLE image_exif_temp; 
 
 
 CREATE TABLE lawa.image_exif_enriched

@@ -6,6 +6,9 @@ docker compose up -d clickhouse postgres
 
 sleep 10
 
+echo -e "Creae database..."
+docker compose exec clickhouse bash -c '/var/lib/clickhouse/user_files/5-lawa.sh'
+
 echo -e "Start app..."
 docker compose up -d app
 
@@ -30,5 +33,5 @@ docker compose exec app bash -c '/app/sync_data_store.sh'
 echo -e "Read metadata from images..."
 docker compose exec app python exif_data.py
 
-echo -e "Enrich image data..."
+echo -e "Setup tables Clickhouse..."
 docker compose exec clickhouse bash -c '/var/lib/clickhouse/user_files/20-lawa.sh'
