@@ -1,0 +1,13 @@
+dash==2.18.2
+dash-mantine-components==0.15.1
+plotly==5.24.1
+dash-iconify==0.1.2
+dash-leaflet
+dash-extensions
+pandas
+clickhouse-connect
+Jinja2
+psycopg
+pillow
+sshfs
+webdav4
