@@ -362,12 +362,30 @@ def get_records(bounds, date_range):
         },
         style_header={"fontWeight": "bold"},
     )
-    images = dmc.SimpleGrid(
-        cols={"base": 4, "sm": 1, "lg": 4},
-        spacing={"base": 10, "sm": "xl"},
-        verticalSpacing={"base": "md", "sm": "xl"},
-        children=[dmc.Image(radius="sm", src=p) for p in image_paths],
-        mb=30,
+    images = (
+        dmc.SimpleGrid(
+            [
+                html.Div(
+                    dmc.Image(src=img, style={"cursor": "pointer"}),
+                    id={"type": "img", "index": i},
+                )
+                for i, img in enumerate(image_paths)
+            ],
+            cols={"base": 4, "sm": 1, "lg": 4},
+            spacing={"base": 10, "sm": "xl"},
+            verticalSpacing={"base": "md", "sm": "xl"},
+            mb=30,
+        ),
+        dmc.Modal(
+            id="image-modal",
+            size="xl",
+            children=dmc.Carousel(
+                [dmc.CarouselSlide(dmc.Image(src=img)) for img in image_paths],
+                id="carousel",
+                withIndicators=False,
+                loop=True,
+            ),
+        ),
     )
     return table, images
 
@@ -491,3 +509,14 @@ def print_data_range(date_range):
     start_date, end_date = date_range[0], date_range[1]
     date_range_str = f"Selected date range: {start_date} to {end_date}"
     return date_range_str
+
+@callback(
+    Output("image-modal", "opened"),
+    Output("carousel", "initialSlide"),
+    Input({"type": "img", "index": dash.ALL}, "n_clicks"),
+    prevent_initial_call=True,
+)
+def open_modal(n_clicks):
+    index = ctx.triggered_id.index
+    return True, index
+
