@@ -1,3 +1,4 @@
+--WITH a AS (
 SELECT
   h3_cell,
   normalize_polygon(h3ToGeoBoundary(assumeNotNull(h3_cell))) AS boundary,
@@ -16,6 +17,9 @@ WHERE latitude BETWEEN {{ min_lat }} AND {{ max_lat }} AND longitude BETWEEN {{ 
 AND toDate(day) BETWEEN '{{ start_date }}' AND '{{ end_date }}'
 -- AND day BETWEEN parseDateTime('{{ start_date }}', '%Y-%m-%d') AND parseDateTime('{{ end_date }}', '%Y-%m-%d')
 -- AND day BETWEEN parseDateTime('{{ start_date }}', '%Y-%m-%d %H:%i') AND parseDateTime('{{ end_date }}', '%Y-%m-%d %H:%i')
--- AND time BETWEEN '{{ start_date }}' AND '{{ end_date }}')
 GROUP BY 1, 2
-ORDER BY 1 DESC;
+ORDER BY 1 DESC
+--
+--), b AS (
+--SELECT *, untuple(arrayJoin(description_top_app)) AS description FROM a)
+--SELECT cnt, boundary, description.item, description.count FROM b;

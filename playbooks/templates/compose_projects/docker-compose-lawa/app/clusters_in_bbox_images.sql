@@ -1,57 +1,20 @@
-WITH raw AS
-    (
-        WITH optimal_resolution AS (
-                WITH
-                    a AS
-                    (
-                        SELECT [COLUMNS('h3') APPLY uniqCombined(12)] AS my_array
-                        FROM image_exif_enriched
-                        WHERE lat BETWEEN %s AND %s AND lon BETWEEN %s AND %s
-                        AND time BETWEEN %s AND %s
+SELECT
+  h3_cell,
+  normalize_polygon(h3ToGeoBoundary(assumeNotNull(h3_cell))) AS boundary,
+  countMerge(cnt) AS cnt
+  --countrycode,
+  --uniqMerge(scie_uniq) AS scie_uniq
+  --uniqMerge(rec_uniq) AS rec_uniq
+  --topKMerge(10)(scie_top) AS scie_top,
+  --approx_top_kMerge(10)(scie_top_app) AS scie_top_app,
+  --topKMerge(10)(rec_top) AS rec_top
+  --approx_top_kMerge(10)(rec_top_app) AS rec_top_app
+FROM {{ table }}
+WHERE latitude BETWEEN {{ min_lat }} AND {{ max_lat }} AND longitude BETWEEN {{ min_lon }} AND {{ max_lon }}
+AND toDate(day) BETWEEN '{{ start_date }}' AND '{{ end_date }}'
+-- AND day BETWEEN parseDateTime('{{ start_date }}', '%Y-%m-%d') AND parseDateTime('{{ end_date }}', '%Y-%m-%d')
+-- AND day BETWEEN parseDateTime('{{ start_date }}', '%Y-%m-%d %H:%i') AND parseDateTime('{{ end_date }}', '%Y-%m-%d %H:%i')
+GROUP BY 1, 2
+ORDER BY 3 DESC
 
-                    ),
-                    b AS
-                    (
-                        SELECT arrayMap(x -> abs(x - 1000), my_array) AS diff
-                        FROM a
-                    ),
-                    c AS
-                    (
-                        SELECT range(1, 9) AS range_index
-                    ),
-                    d AS
-                    (
-                        SELECT
-                            my_array,
-                            diff,
-                            range_index
-                        FROM a, b, c
-                    )
-                SELECT range_index
-                FROM d
-                ARRAY JOIN
-                    my_array,
-                    diff,
-                    range_index
-                ORDER BY
-                    diff ASC,
-                    range_index DESC
-                LIMIT 1
-            )
-        SELECT
-            count(*) AS cnt,
-            range_index,
-            [h3_1, h3_3, h3_5, h3_7, h3_9, h3_11, h3_13, h3_15][range_index] AS h3_index
-        FROM image_exif_enriched, optimal_resolution
-        WHERE lat BETWEEN %s AND %s AND lon BETWEEN %s AND %s
-        AND time BETWEEN %s AND %s
-        GROUP BY
-            3,
-            2
-    )
-  SELECT
-      cnt,
-      range_index,
-      h3ToGeo(assumeNotNull(h3_index)).2 AS latitude,
-      h3ToGeo(assumeNotNull(h3_index)).1 AS longitude
-FROM raw 
+

@@ -1,0 +1,17 @@
+---
+docker_compose_projects:
+  - name: lawa
+    folder: templates/compose_projects/docker-compose-lawa
+
+clickhouse_user: clickhouse
+clickhouse_password: ""
+
+postgres_host: postgres # Needed for named collections
+postgres_db: lawa # Needed for named collections
+postgres_user: postgres
+postgres_password: ""
+  
+webdav_endpoint_url: ""
+webdav_user: ""
+webdav_password: ""
+...
