@@ -1,0 +1,5 @@
+---
+ansible_host: 94.130.77.35
+ansible_user: root
+postgres_confd: 2c_4r 
+...
