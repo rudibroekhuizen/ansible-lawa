@@ -4,6 +4,10 @@
   gather_facts: true
   become: true
   tasks:
+    - name: Gather facts
+      ansible.builtin.setup:
+      tags: gather_facts
+
     # - name: Create folders to hold data volumes
     #   ansible.builtin.file:
     #     path: "{{ item }}"
@@ -18,3 +22,4 @@
         name: docker
       tags: docker
 ...
+
