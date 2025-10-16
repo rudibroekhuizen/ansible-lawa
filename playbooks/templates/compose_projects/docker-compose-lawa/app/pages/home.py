@@ -44,20 +44,13 @@ from utils import (
     plotly_to_datetime,
     data_for_track_select,
     get_resolution_from_zoom,
-    get_icon_size_from_zoom
-)  # , selected_date_range
-
-# from utils import get_clickhouse_client, plotly_to_datetime, ClickClient
+    get_icon_size_from_zoom,
+)
 
 # Configure logging to print to console
 logging.basicConfig(level=logging.INFO)
 
-
 client = get_clickhouse_client()
-# client = get_clickhouse_client("localhost", "clickhouse", "clickhouse", "lawa")
-# client = ClickClient()
-
-# dash.register_page(__name__, path="/", top_nav=True)
 
 dash.register_page(
     __name__,
@@ -94,6 +87,7 @@ def layout(
                                 boxZoom=True,
                                 children=[
                                     dl.TileLayer(),
+                                    dl.FullScreenControl(),
                                     dl.LayerGroup(id="df_clusters2"),
                                     dl.LayerGroup(id="df_clusters_images1"),
                                     dl.LayerGroup(id="start_points"),
@@ -291,9 +285,7 @@ def update_url_from_slider(
 
 # Update the viewport of the map based on selected track
 @callback(
-    Output("map", "viewport"),
-    Input("select_track", "value"),
-    prevent_initial_call=True
+    Output("map", "viewport"), Input("select_track", "value"), prevent_initial_call=True
 )
 def fly_to_selected_track(st):
     # center_lat=52
@@ -519,6 +511,7 @@ def get_clusters_in_bbox(graph_date_range, graph_date_range_relayoutdata, bounds
 
     return pg
 
+
 # Plot start points of track
 @callback(
     Output("start_points", "children"),
@@ -559,11 +552,11 @@ def get_clusters_in_bbox(graph_date_range, graph_date_range_relayoutdata, bounds
     # df = pd.DataFrame(result.result_rows, columns=column_names)
 
     # if not df.empty:
-        # Add additional column
-        # df["h3_2_list"] = df["h3_2"].apply(get_geo_boundary)
+    # Add additional column
+    # df["h3_2_list"] = df["h3_2"].apply(get_geo_boundary)
 
-        # Calculate opacity of cells
-        # df["opacity"] = df["cnt"] / (df["cnt"].max()).round(3) - 0.35
+    # Calculate opacity of cells
+    # df["opacity"] = df["cnt"] / (df["cnt"].max()).round(3) - 0.35
 
     marker_size = get_icon_size_from_zoom(zoom)
 
@@ -573,15 +566,17 @@ def get_clusters_in_bbox(graph_date_range, graph_date_range_relayoutdata, bounds
             icon=dict(
                 iconUrl="https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-green.png",
                 iconSize=marker_size,
-                iconAnchor=[marker_size[0] / 2, marker_size[1]],       #[12, 41],
-                popupAnchor=[1, -marker_size[1] * 0.8],         #[1, -34],
+                iconAnchor=[marker_size[0] / 2, marker_size[1]],  # [12, 41],
+                popupAnchor=[1, -marker_size[1] * 0.8],  # [1, -34],
             ),
             children=[
                 # dl.Tooltip(f"Index: {index}"), # Optional tooltip
-                dl.Popup(f"Start marker of track {row['description']}")  # Popup showing count
+                dl.Popup(
+                    f"Start marker of track {row['description']}"
+                )  # Popup showing count
             ],
             # Optionally use other row data for styling or identification
-            # id=f"marker-{index}" 
+            # id=f"marker-{index}"
         )
         for index, row in df.iterrows()
     ]
@@ -633,21 +628,24 @@ def get_clusters_in_bbox(graph_date_range, graph_date_range_relayoutdata, bounds
             icon=dict(
                 iconUrl="https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-red.png",
                 iconSize=marker_size,
-                iconAnchor=[marker_size[0] / 2, marker_size[1]],       #[12, 41],
-                popupAnchor=[1, -marker_size[1] * 0.8],         #[1, -34],
+                iconAnchor=[marker_size[0] / 2, marker_size[1]],  # [12, 41],
+                popupAnchor=[1, -marker_size[1] * 0.8],  # [1, -34],
                 # iconSize=[25, 41],
                 # iconAnchor=[12, 41],
                 # popupAnchor=[1, -34],
             ),
             children=[
                 # dl.Tooltip(f"Index: {index}"), # Optional tooltip
-                dl.Popup(f"End marker of track {row['description']}")  # Popup showing count
+                dl.Popup(
+                    f"End marker of track {row['description']}"
+                )  # Popup showing count
             ],
         )
         for index, row in df.iterrows()
     ]
 
     return markers
+
 
 # Trackbook summary table
 @callback(
@@ -671,7 +669,6 @@ def summary(graph_date_range, graph_date_range_relayoutdata, bounds, zoom):
     max_lon = bounds[1][1]  # east 180
 
     resolution = get_resolution_from_zoom(zoom)
-
 
     with open("trackbook_summary.sql", "r") as file:
         template = Template(file.read())
@@ -854,7 +851,11 @@ def get_records(graph_date_range, graph_date_range_relayoutdata, bounds):
                             # )
                             dmc.Image(
                                 src=row["path"],
-                                style={'width': '100vw', 'height': '100vh', 'objectFit': 'contain'}
+                                style={
+                                    "width": "100vw",
+                                    "height": "100vh",
+                                    "objectFit": "contain",
+                                },
                             )
                         )
                         for index, row in df.iterrows()
