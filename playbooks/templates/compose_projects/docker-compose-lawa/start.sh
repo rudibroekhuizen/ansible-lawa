@@ -1,12 +1,14 @@
 #!/bin/bash
 set -euo pipefail
 
+arg=${1:-}
+
 echo -e "Start data containers..."
 docker compose up -d clickhouse postgres
 
 sleep 10
 
-echo -e "Creae database..."
+echo -e "Create database..."
 docker compose exec clickhouse bash -c '/var/lib/clickhouse/user_files/5-lawa.sh'
 
 echo -e "Start app..."
@@ -27,8 +29,16 @@ docker compose exec postgres bash -c 'psql -v ON_ERROR_STOP=1 -U postgres < /var
 echo -e "Setup tables Clickhouse..."
 docker compose exec clickhouse bash -c '/var/lib/clickhouse/user_files/10-lawa.sh'
 
-echo -e "Retrieve images from webdav store into app..."
-docker compose exec app bash -c '/app/sync_data_store.sh'
+if [[ "$arg" == "sample" ]]; then
+    echo -e "Retrieve sample images from webdav store into app..."
+    docker compose exec app bash -c '/app/sync_data_store.sh sample'
+elif [[ "$arg" == "test" ]]; then
+    echo "Argument 'test' detected. Performing test operations..."
+    echo "TEST_MESSAGE"
+else
+    echo -e "Retrieve images from webdav store into app..."
+    docker compose exec app bash -c '/app/sync_data_store.sh'
+fi
 
 echo -e "Read metadata from images..."
 docker compose exec app python exif_data.py

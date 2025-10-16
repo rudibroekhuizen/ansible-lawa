@@ -1,10 +1,10 @@
 ---
 roles:
-  - src: https://gitlab.com/naturalis/lib/ansible/ansible-role-ubuntu-server
+  - src: https://gitlab.com/naturalis/lib/ansible/ansible-role-docker.git
+    version: 0.0.7
     scm: git
-    version: 0.2.5
-    name: base
+    name: docker
 collections:
   - name: community.docker
-    version: 3.4.8
+    version: 3.10.4
 ...

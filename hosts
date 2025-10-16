@@ -1,16 +1,21 @@
-# Stage
-
-[production:children]
-lawa_prd
-
-[development:children]
-lawa_dev
-
-
-# Function
+# Group by function/deploy environment
+[lawa_prd]
+# lawa-a-prd
+ubuntu-4gb-nbg1-2
 
 [lawa_dev]
 lawa-a-dev
 
-[lawa_prd]
-lawa-a-prd
+
+# Group by deploy environment
+[development:children]
+lawa_dev
+
+[production:children]
+lawa_prd
+
+
+# Group by function
+[lawa:children]
+lawa_dev
+lawa_prd

@@ -13,8 +13,11 @@ from dash import (
     ctx,
     page_container,
     page_registry,
+    Patch,
+    no_update,
 )
-import os
+
+# import os
 import dash_leaflet as dl
 from dash import dash_table
 from dash.dependencies import Input, Output
@@ -28,6 +31,8 @@ import datetime as dt
 from jinja2 import Template
 import plotly.express as px
 import numpy
+from urllib.parse import parse_qs, urlparse
+
 
 # Dash
 _dash_renderer._set_react_version("18.2.0")
@@ -45,26 +50,12 @@ stylesheets = [
 # Configure logging to print to console
 logging.basicConfig(level=logging.INFO)
 
-# ClickHouse configurations
-clickhouse_db = os.getenv("CLICKHOUSE_DB")
-clickhouse_host = os.getenv("CLICKHOUSE_HOST")
-clickhouse_user = os.getenv("CLICKHOUSE_USER")
-clickhouse_pass = os.getenv("CLICKHOUSE_PASSWORD")
-
 # Clickhouse multi query
 common.set_setting("autogenerate_session_id", False)
 
 # Clickhouse pool manager
 big_pool_mgr = httputil.get_pool_manager(maxsize=16, num_pools=12)
 
-client = clickhouse_connect.get_client(
-    pool_mgr=big_pool_mgr,
-    host=clickhouse_host,
-    port=8123,
-    user=clickhouse_user,
-    password=clickhouse_pass,
-    database=clickhouse_db,
-)
 
 icons = {
     "github": "ion:logo-github",
@@ -88,6 +79,45 @@ def create_link(icon, href, text=""):
         target="_blank",
     )
 
+# Shows when on "/"
+def home_navbar_content():
+    return dmc.Stack(
+        [
+            dmc.Text("Home Menu"),
+            dmc.NavLink(
+                label="Home",
+                href="/",
+                refresh=True,
+                c="dark.9",
+                # icon=DashIconify(icon="lucide:layout-dashboard"),
+                # active=True,
+            ),
+            dmc.NavLink(
+                label="Docs",
+                href="/docs",
+                # icon=DashIconify(icon="lucide:bar-chart-2"),
+            ),
+        ]
+    )
+
+
+def otherpage_navbar_content():
+    return dmc.Stack(
+        [
+            dmc.Text("Other Page Menu"),
+            dmc.NavLink(
+                label="Settings",
+                href="/settings",
+                # icon=DashIconify(icon="lucide:settings"),
+            ),
+            dmc.NavLink(
+                label="Help",
+                href="/help",
+                # icon=DashIconify(icon="lucide:help-circle"),
+            ),
+        ]
+    )
+
 
 burger_button = dcc.Loading(
     dmc.Burger(id="burger-button", opened=False, hiddenFrom="md"),
@@ -100,8 +130,19 @@ header = dmc.Group(
     [
         burger_button,
         dmc.Image(src="/assets/markering.jpg", h=36, w="100%"),
-        dmc.Text(["LAWA"], size="xl", fw=700),
-        dmc.Text("Vanessa en Rudi stappen door", visibleFrom="sm", size="xl"),
+        # dmc.NavLink(label="LAWA", href="/", active="exact"),
+        dmc.Anchor(
+            "LAWA",
+            href="/",
+            # target="_self",
+            refresh=True,
+            underline="never",
+            size="xl",
+            fw=700,
+            c="black"
+        ),
+        # dmc.Text(["LAWA"], size="xl", fw=700),
+        dmc.Text("Nederlands Kustpad", visibleFrom="sm", size="xl"),
         dmc.Text(
             create_link(
                 icons["github"], "https://github.com/rudibroekhuizen/ansible-lawa"
@@ -115,37 +156,86 @@ header = dmc.Group(
 )
 
 
-navbar = dmc.ScrollArea(
-    [
-        # multi_select_classification,
-        # multi_select_collection,
-    ],
-    offsetScrollbars=True,
-    type="scroll",
-    style={"height": "100%"},
-)
-
 app = Dash(
-    external_stylesheets=stylesheets, use_pages=True, suppress_callback_exceptions=True
+    __name__,
+    # external_stylesheets=stylesheets, use_pages=True, suppress_callback_exceptions=True
+    external_stylesheets=stylesheets,
+    use_pages=True,
 )
 
-app_shell = dmc.AppShell(
-    [
-        dmc.AppShellHeader([dmc.Space(h=5), header], px=25, style={"height": "50px"}),
-        dmc.AppShellNavbar(navbar, p=24, style={"top": "50px"}),
-        dmc.AppShellMain(page_container),
+# logging.info(dash.page_registry.values())
+
+app.layout = dmc.MantineProvider(
+    id="mantine-provider",
+    children=[
+        dcc.Location(
+            id="url",
+            # refresh="callback-nav"
+            refresh=False,
+        ),
+        dmc.AppShell(
+            children=[
+                dmc.AppShellHeader(
+                    [
+                        dmc.Space(h=9),
+                        header
+                    ],
+                    px=25,
+                    style={"height": "50px"}
+                ),
+                dmc.AppShellNavbar(
+                    dmc.ScrollArea(
+                        [
+                            dmc.Box(id="navbar-content"),
+                        ],
+                        offsetScrollbars=True,
+                        type="scroll",
+                        style={"height": "100%"},
+                    ),
+                    p=24,
+                    style={"top": "50px"},
+                ),
+                dmc.AppShellMain(
+                    page_container
+                ),
+            ],
+            header={"height": 70},
+            padding="xl",
+            navbar={
+                "width": {
+                    "base": "80%",  # Full width on mobile
+                    "sm": 200,  # 200px width on small screens and above
+                    "lg": 300,  # 300px width on large screens and above
+                },
+                # "width": 375,
+                "breakpoint": "md",
+                "collapsed": {"mobile": True},
+            },
+            id="app-shell",
+        ),
     ],
-    header={"height": 70},
-    padding="xl",
-    navbar={
-        "width": 375,
-        "breakpoint": "md",
-        "collapsed": {"mobile": True},
-    },
-    id="app-shell",
 )
 
-app.layout = dmc.MantineProvider(app_shell)
+
+# Callback to update Navbar content based on URL pathname
+@callback(
+    Output("navbar-content", "children"),
+    Input("url", "pathname"),
+)
+def update_navbar_content(pathname):
+    if pathname == "/":
+        return home_navbar_content()
+    elif pathname == "/otherpage":
+        return otherpage_navbar_content()
+    # Add more conditions for other pages
+    else:
+        # Default content or an empty navbar for unknown pages
+        return dmc.Stack(
+            [
+                dmc.Text("Default Menu"),
+                dmc.NavLink(label="Home", href="/"),
+            ]
+        )
 
 
 @callback(
@@ -158,17 +248,17 @@ def navbar_is_open(opened, navbar):
     return navbar
 
 
-# On mobile close the navbar on update
-@callback(
-    Output("burger-button", "opened"),
-    Input("map", "bounds"),
-    # Input("date_range", "value"),
-    # Input("multi_select", "value"),
-    # Input("multi_select_collection", "value"),
-    prevent_initial_call=True,
-)
-def navbar_is_open(*_):
-    return False
+# # On mobile close the navbar on update
+# @callback(
+#     Output("burger-button", "opened"),
+#     Input("map", "bounds"),
+#     # Input("date_range", "value"),
+#     # Input("multi_select", "value"),
+#     # Input("multi_select_collection", "value"),
+#     prevent_initial_call=True,
+# )
+# def navbar_is_open(*_):
+#     return False
 
 
 if __name__ == "__main__":
