@@ -5,6 +5,7 @@ FROM
 {{ table }}
 WHERE latitude BETWEEN {{ min_lat }} AND {{ max_lat }} AND longitude BETWEEN {{ min_lon }} AND {{ max_lon }}
 AND toDate(day) BETWEEN '{{ start_date }}' AND '{{ end_date }}'
+-- AND toDate(day) > '{{ start_date }}' AND toDate(day) <= '{{ end_date }}'
 -- AND day BETWEEN parseDateTime('{{ start_date }}', '%Y-%m-%d') AND parseDateTime('{{ end_date }}', '%Y-%m-%d')
 ), b AS (
 SELECT *, untuple(arrayJoin(description_top_app)) AS description FROM a
@@ -15,9 +16,9 @@ formatDateTime(start_date, '%Y-%m-%d %H:%i') AS start_date,
 formatDateTime(end_date, '%Y-%m-%d %H:%i') AS end_date,
 --formatDateTime(start_date, '%Y-%m-%d') AS start_date,
 --formatDateTime(end_date, '%Y-%m-%d') AS end_date,
-total_distance_kilometers,
-total_duration_hours,
-average_speed_kmh,
+round(total_distance_kilometers, 2) AS total_distance_kilometers,
+round(total_duration_hours, 2) AS total_duration_hours,
+round(average_speed_kmh, 2) AS average_speed_kmh,
 number_of_points
 FROM lawa.trackbook_summary
 WHERE description IN (
