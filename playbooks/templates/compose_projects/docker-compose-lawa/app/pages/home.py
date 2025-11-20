@@ -196,7 +196,17 @@ def layout(
                                     },
                                 },
                             ),
-                            dmc.Text(id="selected_date_range"),
+                            dmc.Text(
+                                id="selected_date_range",
+                                size="sm"
+                            ),
+                            # html.Div(
+                            dmc.Box(
+                                id="distance_km"
+                            ),
+                            dmc.Box(
+                                id="number_of_tracks"
+                            ),
                         ]
                     ),
                 ],
@@ -257,7 +267,7 @@ def update_url_from_slider(
     start_date = plotly_to_datetime(graph_date_range["layout"]["xaxis"]["range"][0])
     end_date = plotly_to_datetime(graph_date_range["layout"]["xaxis"]["range"][1])
 
-    # logging.info(f"update_url start and end date {start_date}, {end_date}")
+    logging.info(f"update_url start and end date {start_date}, {end_date}")
 
     # Location, center
     center_lat = center["lat"]
@@ -749,6 +759,62 @@ def summary(graph_date_range, graph_date_range_relayoutdata, bounds, zoom):
     else:
         return None
 
+# Display total km
+@callback(
+    Output("distance_km", "children"),
+    Output("number_of_tracks", "children"),
+    Input("graph_date_range", "figure"),
+    Input("graph_date_range", "relayoutData"),
+    Input("map", "bounds"),
+    Input("map", "zoom"),
+    prevent_initial_call=True,
+)
+def summary(graph_date_range, graph_date_range_relayoutdata, bounds, zoom):
+
+    start_date = plotly_to_datetime(graph_date_range["layout"]["xaxis"]["range"][0])
+    end_date = plotly_to_datetime(graph_date_range["layout"]["xaxis"]["range"][1])
+
+    min_lat = bounds[0][0]  # south -90
+    max_lat = bounds[1][0]  # north 90
+    min_lon = bounds[0][1]  # west -180
+    max_lon = bounds[1][1]  # east 180
+
+    resolution = get_resolution_from_zoom(zoom)
+
+    with open("trackbook_summary.sql", "r") as file:
+        template = Template(file.read())
+
+        sql_query = template.render(
+            table=f"lawa.trackbook_agg_h3_{resolution}",
+            min_lat=min_lat,
+            max_lat=max_lat,
+            min_lon=min_lon,
+            max_lon=max_lon,
+            start_date=start_date,
+            end_date=end_date,
+        )
+
+    df = client.query_df(sql_query)
+
+    if not df.empty:
+
+        distance = df['total_distance_kilometers'].sum().round(2)
+
+        number_of_tracks = len(df)
+
+        result_a = dmc.Text(
+            f"Totaal gewandelde kilometers: {distance}",
+            size="sm"
+        ),
+        result_b = dmc.Text(
+            f"Aantal etappes: {number_of_tracks}",
+            size="sm"
+        )
+
+
+        return result_a, result_b
+    else:
+        return None, None
 
 # Create image grid and table with image info
 @callback(
@@ -877,9 +943,10 @@ def get_records(graph_date_range, graph_date_range_relayoutdata, bounds):
     Input("graph_date_range", "figure"),
     Input("graph_date_range", "relayoutData"),
     Input("map", "bounds"),
+    Input("map", "zoom"),
     prevent_initial_call=True,
 )
-def get_count_per_day(graph_date_range, graph_date_range_relayoutdata, bounds):
+def get_count_per_day(graph_date_range, graph_date_range_relayoutdata, bounds, zoom):
 
     # logging.info(f"go.Scatter figure: {graph_date_range}")
     # logging.info(f"go.Scatter relayoutData: {graph_date_range_relayoutdata}")
@@ -897,10 +964,14 @@ def get_count_per_day(graph_date_range, graph_date_range_relayoutdata, bounds):
     min_lon = bounds[0][1]
     max_lon = bounds[1][1]
 
+    resolution = get_resolution_from_zoom(zoom)
+
     with open("count_per_day.sql", "r") as file:
         template = Template(file.read())
         # sql_query = template.render()
         sql_query = template.render(
+
+            table=f"lawa.trackbook_agg_h3_{resolution}",
             min_lat=min_lat,
             max_lat=max_lat,
             min_lon=min_lon,
@@ -931,7 +1002,7 @@ def print_data_range(graph_date_range, graph_date_range_relayoutdata):
     start_date = plotly_to_datetime(graph_date_range["layout"]["xaxis"]["range"][0])
     end_date = plotly_to_datetime(graph_date_range["layout"]["xaxis"]["range"][1])
 
-    date_range_str = f"Selected date range: {start_date} to {end_date}"
+    date_range_str = f"Geselecteerde datum reeks: {start_date} to {end_date}"
     return date_range_str
 
 
