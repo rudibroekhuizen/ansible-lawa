@@ -1,3 +1,6 @@
+playbooks/templates/compose_projects/docker-compose-lawa/app/assets/images/
+*.key
+
 roles
 roles/*
 collections

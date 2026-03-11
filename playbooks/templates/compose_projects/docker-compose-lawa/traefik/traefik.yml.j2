@@ -1,0 +1,48 @@
+---
+global:
+  sendAnonymousUsage: false
+
+log:
+  level: {{ traefik_log_level | default('ERROR') }}  # Logging level (DEBUG, INFO, WARN, ERROR, FATAL, PANIC)
+
+metrics:
+  prometheus: {}
+
+api:
+  dashboard: {{ traefik_enable_dashboard | default('false') }}
+  insecure: true  # Insecure API (for local development)
+
+tls:
+  options:
+    default:
+      minVersion: VersionTLS13
+
+providers:
+  docker:
+    exposedByDefault: false
+
+entryPoints:
+  web:
+    address: ":80"
+    http:
+      redirections:
+        entryPoint:
+          to: "websecure"
+          scheme: "https"
+          permanent: true
+  websecure:
+    address: ":443"
+    http:
+      middlewares:
+        - "traefik-forward-auth"
+
+certificatesResolvers:
+  transipresolver:
+    acme:
+      email: {{ email }}
+      dnsChallenge:
+        provider: "transip"
+        delayBeforeCheck: 5
+      storage: "/letsencrypt/acme.json"
+...
+
