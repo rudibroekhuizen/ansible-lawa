@@ -1,4 +1,4 @@
-SELECT path, time, lat, lon, make, model FROM lawa.image_exif_enriched
+SELECT path, time, lat, lon, make, model, image_description FROM lawa.image_exif_enriched
 WHERE lat BETWEEN {{ min_lat }} AND {{ max_lat }}
 AND lon BETWEEN {{ min_lon }} AND {{ max_lon }}
 -- AND time BETWEEN parseDateTime('{{ start_date }}', '%Y-%m-%d %H:%i') AND parseDateTime('{{ end_date }}', '%Y-%m-%d %H:%i')

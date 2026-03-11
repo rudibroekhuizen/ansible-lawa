@@ -7,6 +7,7 @@ from dash import (
     html,
     dcc,
     callback,
+    clientside_callback,
     Input,
     Output,
     State,
@@ -15,6 +16,7 @@ from dash import (
     page_registry,
     Patch,
     no_update,
+    ALL
 )
 
 # import os
@@ -34,19 +36,6 @@ import numpy
 from urllib.parse import parse_qs, urlparse
 
 
-# Dash
-_dash_renderer._set_react_version("18.2.0")
-
-# Dash
-stylesheets = [
-    "https://unpkg.com/@mantine/dates@7/styles.css",
-    "https://unpkg.com/@mantine/code-highlight@7/styles.css",
-    "https://unpkg.com/@mantine/charts@7/styles.css",
-    "https://unpkg.com/@mantine/carousel@7/styles.css",
-    "https://unpkg.com/@mantine/notifications@7/styles.css",
-    "https://unpkg.com/@mantine/nprogress@7/styles.css",
-]
-
 # Configure logging to print to console
 logging.basicConfig(level=logging.INFO)
 
@@ -56,114 +45,21 @@ common.set_setting("autogenerate_session_id", False)
 # Clickhouse pool manager
 big_pool_mgr = httputil.get_pool_manager(maxsize=16, num_pools=12)
 
-
-icons = {
-    "github": "ion:logo-github",
-    "tools": "bi:tools",
-}
-
-
-def create_link(icon, href, text=""):
-    return dmc.Anchor(
-        [
-            (
-                dmc.ActionIcon(
-                    DashIconify(icon=icon, width=25), variant="transparent", size="lg"
-                )
-                if icon
-                else None
-            ),
-            text,
-        ],
-        href=href,
-        target="_blank",
-    )
-
-# Shows when on "/"
-def home_navbar_content():
-    return dmc.Stack(
-        [
-            dmc.Text("Home Menu"),
-            dmc.NavLink(
-                label="Home",
-                href="/",
-                refresh=True,
-                c="dark.9",
-                # icon=DashIconify(icon="lucide:layout-dashboard"),
-                # active=True,
-            ),
-            dmc.NavLink(
-                label="Docs",
-                href="/docs",
-                # icon=DashIconify(icon="lucide:bar-chart-2"),
-            ),
-        ]
-    )
-
-
-def otherpage_navbar_content():
-    return dmc.Stack(
-        [
-            dmc.Text("Other Page Menu"),
-            dmc.NavLink(
-                label="Settings",
-                href="/settings",
-                # icon=DashIconify(icon="lucide:settings"),
-            ),
-            dmc.NavLink(
-                label="Help",
-                href="/help",
-                # icon=DashIconify(icon="lucide:help-circle"),
-            ),
-        ]
-    )
-
-
-burger_button = dcc.Loading(
-    dmc.Burger(id="burger-button", opened=False, hiddenFrom="md"),
-    overlay_style={"zIndex": 5000},
-    delay_show=500,
-    custom_spinner=dmc.Group(dmc.Loader(type="dots", size="sm")),
+theme_toggle = dmc.Switch(
+    offLabel=DashIconify(
+        icon="radix-icons:sun", width=15, color=dmc.DEFAULT_THEME["colors"]["yellow"][8]
+    ),
+    onLabel=DashIconify(
+        icon="radix-icons:moon",
+        width=15,
+        color=dmc.DEFAULT_THEME["colors"]["yellow"][6],
+    ),
+    id="color-scheme-toggle",
+    persistence=True,
+    color="grey",
 )
 
-header = dmc.Group(
-    [
-        burger_button,
-        dmc.Image(src="/assets/markering.jpg", h=36, w="100%"),
-        # dmc.NavLink(label="LAWA", href="/", active="exact"),
-        dmc.Anchor(
-            "LAWA",
-            href="/",
-            # target="_self",
-            refresh=True,
-            underline="never",
-            size="xl",
-            fw=700,
-            c="black"
-        ),
-        # dmc.Text(["LAWA"], size="xl", fw=700),
-        dmc.Text("Nederlands Kustpad", visibleFrom="sm", size="xl"),
-        dmc.Text(
-            create_link(
-                icons["github"], "https://github.com/rudibroekhuizen/ansible-lawa"
-            ),
-            ml="auto",
-        ),
-    ],
-    justify="flex-start",
-    gap="sm",
-    style={"height": "1 !important"},
-)
-
-
-app = Dash(
-    __name__,
-    # external_stylesheets=stylesheets, use_pages=True, suppress_callback_exceptions=True
-    external_stylesheets=stylesheets,
-    use_pages=True,
-)
-
-# logging.info(dash.page_registry.values())
+app = Dash(use_pages=True)
 
 app.layout = dmc.MantineProvider(
     id="mantine-provider",
@@ -176,90 +72,124 @@ app.layout = dmc.MantineProvider(
         dmc.AppShell(
             children=[
                 dmc.AppShellHeader(
-                    [
-                        dmc.Space(h=9),
-                        header
-                    ],
-                    px=25,
-                    style={"height": "50px"}
-                ),
-                dmc.AppShellNavbar(
-                    dmc.ScrollArea(
+                   dmc.Group(
                         [
-                            dmc.Box(id="navbar-content"),
+                            dmc.Group(
+                                [
+                                    dmc.Burger(
+                                        id="burger",
+                                        size="sm",
+                                        hiddenFrom="sm",
+                                        opened=False,
+                                    ),
+                                    # dmc.Image(src=logo, h=40, flex=0),
+                                    dmc.Anchor(
+                                        "LAWA",
+                                        href="/",
+                                        refresh=True,
+                                        underline="never",
+                                        size="xl",
+                                        fw=700,
+                                        # color=dmc.DEFAULT_THEME["colors"]["yellow"][6],
+                                        # color=dmc.DEFAULT_THEME["colors"][PRIMARY_COLOR][6],
+                                        # target="_self",
+                                    ),
+                                    # dmc.Title("Demo App", c="blue"),
+                                ]
+                            ),
+                            theme_toggle,
                         ],
-                        offsetScrollbars=True,
-                        type="scroll",
-                        style={"height": "100%"},
+                        justify="space-between",
+                        style={"flex": 1},
+                        # style={"height": "1 !important"},
+                        h="100%",
+                        px="md",
                     ),
-                    p=24,
-                    style={"top": "50px"},
+                ),
+                #     [
+                #         dmc.Space(h=9),
+                #         header
+                #     ],
+                #     px=25,
+                #     style={"height": "50px"}
+                # ),
+                dmc.AppShellNavbar(
+                    id="navbar",
+                    children=[
+                         #"Navbar",
+                         dmc.NavLink(
+                             id={'type': 'navbar-link', 'index': "link-home"},
+                             label="Home",
+                             href="/",
+                             refresh=False,
+                             color=dmc.DEFAULT_THEME["colors"]["yellow"][6],
+                             # color=dmc.DEFAULT_THEME["colors"][PRIMARY_COLOR][6],
+                             # icon="material-symbols:rocket-launch-rounded",
+                             # icon=DashIconify(icon="lucide:layout-dashboard"),
+                             # active=True,
+                         ),
+                         dmc.NavLink(
+                             #id="link-docs",
+                             id={'type': 'navbar-link', 'index': "link-docs"},
+                             label="Docs",
+                             href="/docs",
+                             refresh=False,
+                             color=dmc.DEFAULT_THEME["colors"]["yellow"][6],
+                         ),
+                        # *[
+                        #     dmc.Skeleton(height=28, mt="sm", animate=False)
+                        #     for _ in range(15)
+                        # ],
+                    ],
+                    p="md",
                 ),
                 dmc.AppShellMain(
                     page_container
                 ),
             ],
-            header={"height": 70},
-            padding="xl",
+            header={"height": 60},
+            padding="md",
             navbar={
-                "width": {
-                    "base": "80%",  # Full width on mobile
-                    "sm": 200,  # 200px width on small screens and above
-                    "lg": 300,  # 300px width on large screens and above
-                },
-                # "width": 375,
-                "breakpoint": "md",
+                "width": 300,
+                "breakpoint": "sm",
                 "collapsed": {"mobile": True},
             },
-            id="app-shell",
+            id="appshell",
         ),
     ],
 )
 
 
-# Callback to update Navbar content based on URL pathname
 @callback(
-    Output("navbar-content", "children"),
-    Input("url", "pathname"),
-)
-def update_navbar_content(pathname):
-    if pathname == "/":
-        return home_navbar_content()
-    elif pathname == "/otherpage":
-        return otherpage_navbar_content()
-    # Add more conditions for other pages
-    else:
-        # Default content or an empty navbar for unknown pages
-        return dmc.Stack(
-            [
-                dmc.Text("Default Menu"),
-                dmc.NavLink(label="Home", href="/"),
-            ]
-        )
-
-
-@callback(
-    Output("app-shell", "navbar"),
-    Input("burger-button", "opened"),
-    State("app-shell", "navbar"),
+    Output("appshell", "navbar"),
+    Input("burger", "opened"),
+    State("appshell", "navbar"),
 )
 def navbar_is_open(opened, navbar):
     navbar["collapsed"] = {"mobile": not opened}
     return navbar
 
 
-# # On mobile close the navbar on update
-# @callback(
-#     Output("burger-button", "opened"),
-#     Input("map", "bounds"),
-#     # Input("date_range", "value"),
-#     # Input("multi_select", "value"),
-#     # Input("multi_select_collection", "value"),
-#     prevent_initial_call=True,
-# )
-# def navbar_is_open(*_):
-#     return False
+clientside_callback(
+    """
+    (switchOn) => {
+       document.documentElement.setAttribute('data-mantine-color-scheme', switchOn ? 'dark' : 'light');
+       return window.dash_clientside.no_update
+    }
+    """,
+    Output("color-scheme-toggle", "id"),
+    Input("color-scheme-toggle", "checked"),
+)
 
+
+# On mobile close the navbar on update
+@callback(
+    Output("burger", "opened"),
+    Input({'type': 'navbar-link', 'index': ALL}, 'n_clicks'),
+    prevent_initial_call=True,
+)
+def navbar_is_open(*_):
+    return False
 
 if __name__ == "__main__":
-    app.run(debug=False, host="0.0.0.0")
+    app.run(debug=True, host="0.0.0.0")

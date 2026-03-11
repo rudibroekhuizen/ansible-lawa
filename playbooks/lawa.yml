@@ -4,12 +4,73 @@
   gather_facts: true
   become: true
   vars_prompt:
-    - name: "clickhouse_password"
-      prompt: "Set ClickHouse password"
+    # App
+    - name: "webdav_endpoint_url"
+      prompt: "webdav_endpoint_url"
       private: false
 
+    - name: "webdav_user"
+      prompt: "webdav_user"
+      private: false
+
+    - name: "webdav_password"
+      prompt: "webdav_password"
+      private: false
+
+    # ClickHouse
+    - name: "clickhouse_password"
+      prompt: "clickhouse_password"
+      private: false
+
+    # Postgres
     - name: "postgres_password"
-      prompt: "Set Postgres password"
+      prompt: "postgres_password"
+      private: false
+
+    # Oauth
+    - name: "providers_google_client_id"
+      prompt: "providers_google_client_id"
+      private: false
+
+    - name: "providers_google_client_secret"
+      prompt: "providers_google_client_secret"
+      private: false
+
+    - name: "secret"
+      prompt: "secret"
+      private: false
+
+    - name: "auth_host"
+      prompt: "auth_host"
+      private: false
+
+    - name: "cookie_domain"
+      prompt: "cookie_domain"
+      private: false
+
+    - name: "whitelist"
+      prompt: "whitelist"
+      private: false
+
+    - name: "oauth_fqdn"
+      prompt: "oauth_fqdn"
+      private: false
+
+    # Traefik
+    - name: "email"
+      prompt: "email"
+      private: false
+
+    - name: "lawa_fqdn"
+      prompt: "lawa_fqdn"
+      private: false
+
+    - name: "transip_account_name"
+      prompt: "transip_account_name"
+      private: false
+
+    - name: "transip_key"
+      prompt: "transip_key"
       private: false
 
   tasks:

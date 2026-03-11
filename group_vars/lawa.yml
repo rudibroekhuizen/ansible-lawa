@@ -3,15 +3,29 @@ docker_compose_projects:
   - name: lawa
     folder: templates/compose_projects/docker-compose-lawa
 
-clickhouse_user: clickhouse
-# clickhouse_password: "" # Ansible vars_prompt
-
+# App
 postgres_host: postgres # Needed for named collections
 postgres_db: lawa # Needed for named collections
 postgres_user: postgres
-# postgres_password: "" # Ansible vars_prompt
-  
+postgres_password: ""       # Ansible vars_prompt
+clickhouse_user: clickhouse
+clickhouse_password: ""     # Ansible vars_prompt
 webdav_endpoint_url: ""
 webdav_user: ""
 webdav_password: ""
-...
+
+# Traefik
+email: ""                # Ansible vars_prompt
+lawa_fqdn: ""            # Ansible vars_prompt
+transip_account_name: "" # Ansible vars_prompt
+transip_key: ""          # Ansible vars_prompt
+
+# Oauth
+providers_google_client_id: ""     # Ansible vars_prompt
+providers_google_client_secret: "" # Ansible vars_prompt
+secret: ""                         # Ansible vars_prompt
+auth_host: ""                      # Ansible vars_prompt
+cookie_domain: ""                  # Ansible vars_prompt
+whitelist: ""                      # Ansible vars_prompt
+oauth_fqdn: ""                     # Ansible vars_prompt
+

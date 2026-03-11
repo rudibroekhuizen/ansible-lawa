@@ -11,7 +11,8 @@ AS WITH a AS
             JSONExtract(exif_data, 'longitude', 'Float64') AS lon,
             JSONExtract(exif_data, 'Make', 'String') AS make,
             JSONExtract(exif_data, 'Model', 'String') AS model,
-            JSONExtract(exif_data, 'LensModel', 'String') AS lens_model
+            JSONExtract(exif_data, 'LensModel', 'String') AS lens_model,
+            JSONExtract(exif_data, 'ImageDescription', 'String') AS image_description
         FROM lawa.image_exif
     )
   SELECT
@@ -21,20 +22,13 @@ AS WITH a AS
     lon,
     make,
     model,
-    lens_model
-    -- geoToH3(lon, lat, 1) AS h3_1,
-    -- geoToH3(lon, lat, 3) AS h3_3,
-    -- geoToH3(lon, lat, 5) AS h3_5,
-    -- geoToH3(lon, lat, 7) AS h3_7,
-    -- geoToH3(lon, lat, 9) AS h3_9,
-    -- geoToH3(lon, lat, 11) AS h3_11,
-    -- geoToH3(lon, lat, 13) AS h3_13,
-    -- geoToH3(lon, lat, 15) AS h3_15
+    lens_model,
+    image_description
 FROM a;
 
 
 -- To get the table description:
--- SHOW TABLE image_exif_temp; 
+-- SHOW TABLE image_exif_temp;
 
 
 CREATE TABLE lawa.image_exif_enriched
@@ -45,15 +39,8 @@ CREATE TABLE lawa.image_exif_enriched
     `lon` Float64,
     `make` String,
     `model` String,
-    `lens_model` String
-    -- `h3_1` UInt64,
-    -- `h3_3` UInt64,
-    -- `h3_5` UInt64,
-    -- `h3_7` UInt64,
-    -- `h3_9` UInt64,
-    -- `h3_11` UInt64,
-    -- `h3_13` UInt64,
-    -- `h3_15` UInt64
+    `lens_model` String,
+    `image_description` String
 )
 ENGINE = MergeTree
 ORDER BY time
@@ -428,7 +415,8 @@ WITH a AS
             JSONExtract(exif_data, 'longitude', 'Float64') AS lon,
             JSONExtract(exif_data, 'Make', 'String') AS make,
             JSONExtract(exif_data, 'Model', 'String') AS model,
-            JSONExtract(exif_data, 'LensModel', 'String') AS lens_model
+            JSONExtract(exif_data, 'LensModel', 'String') AS lens_model,
+            JSONExtract(exif_data, 'ImageDescription', 'String') AS image_description
         FROM lawa.image_exif
     )
   SELECT
@@ -438,14 +426,7 @@ WITH a AS
     lon,
     make,
     model,
-    lens_model
-    -- geoToH3(lon, lat, 1) AS h3_1,
-    -- geoToH3(lon, lat, 3) AS h3_3,
-    -- geoToH3(lon, lat, 5) AS h3_5,
-    -- geoToH3(lon, lat, 7) AS h3_7,
-    -- geoToH3(lon, lat, 9) AS h3_9,
-    -- geoToH3(lon, lat, 11) AS h3_11,
-    -- geoToH3(lon, lat, 13) AS h3_13,
-    -- geoToH3(lon, lat, 15) AS h3_15
+    lens_model,
+    image_description
 FROM a;
 --

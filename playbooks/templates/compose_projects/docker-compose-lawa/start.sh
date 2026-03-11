@@ -32,6 +32,8 @@ docker compose exec clickhouse bash -c '/var/lib/clickhouse/user_files/10-lawa.s
 if [[ "$arg" == "sample" ]]; then
     echo -e "Retrieve sample images from webdav store into app..."
     docker compose exec app bash -c '/app/sync_data_store.sh sample'
+    echo -e "Copy images out of the app into app assets"
+    docker compose cp app:/app/assets/images/ app/assets/
 elif [[ "$arg" == "test" ]]; then
     echo "Argument 'test' detected. Performing test operations..."
     echo "TEST_MESSAGE"

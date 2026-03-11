@@ -1,5 +1,4 @@
 import dash
-from dash import html, dcc, Input, Output, callback
 import plotly.graph_objects as go
 import logging
 import datetime
@@ -19,6 +18,7 @@ from dash import (
     register_page,
     Patch,
     no_update,
+    ALL
 )
 import os
 import dash_leaflet as dl
@@ -38,6 +38,8 @@ import plotly.graph_objects as go
 from dash.exceptions import PreventUpdate
 import urllib.parse
 import dash_ag_grid as dag
+import plotly.io as pio
+
 
 from utils import (
     get_clickhouse_client,
@@ -57,10 +59,18 @@ dash.register_page(
     path="/",
 )
 
+dmc.add_figure_templates(default="mantine_light")
+
+dff = px.data.gapminder()
+
+#dff = pd.read_csv("https://raw.githubusercontent.com/plotly/datasets/master/ag-grid/space-mission-data.csv")
+
+dfff = dff[dff.year == 2007]
+
 
 def layout(
     start_date="2024-01-01",
-    end_date="2026-01-01",
+    end_date="2027-01-01",
     min_lat=51.75,
     max_lat=55.55,
     min_lon=None,
@@ -71,7 +81,7 @@ def layout(
 ):
     return html.Div(
         [
-            dcc.Location(id="url_test", refresh=False),
+            dcc.Location(id="url_home", refresh=False),
             dmc.SimpleGrid(
                 cols={"base": 1, "sm": 2, "lg": 2},
                 spacing={"base": 10, "sm": "xl"},
@@ -79,39 +89,56 @@ def layout(
                 children=[
                     dmc.Stack(
                         [
-                            dl.Map(
-                                style={"height": "50vh", "zIndex": 10},
-                                id="map",
-                                bounds=[[min_lat, min_lon], [max_lat, max_lon]],
-                                center={"lat": center_lat, "lng": center_lon},
-                                boxZoom=True,
-                                children=[
-                                    dl.TileLayer(),
-                                    dl.FullScreenControl(),
-                                    dl.LayerGroup(id="df_clusters2"),
-                                    dl.LayerGroup(id="df_clusters_images1"),
-                                    dl.LayerGroup(id="start_points"),
-                                    dl.LayerGroup(id="end_points"),
-                                ],
-                            ),
-                            dmc.Select(
-                                id="select_track",
-                                label="Select track",
-                                placeholder="Placeholder",
-                                searchable=False,
-                                # w=500,
-                                data=data_for_track_select(client),
-                                # data=data
-                            ),
+                            # dmc.Box(
+                            #     [
+                                    dl.Map(
+                                        style={
+                                            "minHeight": "400px",
+                                            "height": "50vh",
+                                            "zIndex": 10
+                                        },
+                                        id="map",
+                                        bounds=[[min_lat, min_lon], [max_lat, max_lon]],
+                                        center={"lat": center_lat, "lng": center_lon},
+                                        boxZoom=True,
+                                        children=[
+                                            dl.TileLayer(),
+                                            dl.FullScreenControl(),
+                                            dl.LayerGroup(id="df_clusters2"),
+                                            dl.LayerGroup(id="df_clusters_images1"),
+                                            dl.LayerGroup(id="start_points"),
+                                            dl.LayerGroup(id="end_points"),
+                                        ],
+                                    ),
+                            #     ],
+                            #     mih=1400
+                            # ),
+                                    dmc.Select(
+                                        id="select_track",
+                                        label="Selecteer wandeling",
+                                        #placeholder="Placeholder",
+                                        searchable=False,
+                                        # w=500,
+                                        data=data_for_track_select(client),
+                                        # data=data
+                                    ),
                         ],
+                        # mih=400,
                         # align="center",
                         gap="xl",
-                    ),
+                    ),  # Closing parenthesis for dmc.Stack
                     dmc.Stack(
                         [
+                        dmc.Box(
+                            [
                             dcc.Graph(
-                                id="graph_date_range",
-                                style={"height": "50vh", "color": "black"},
+                                id={"type": "graph", "index": "graph_date_range"},
+                                #id="graph_date_range",
+                                style={
+                                    "minHeight": "450px",
+                                    #"color": "black"
+                                },
+                                # style={"height": "50vh", "color": "black"},
                                 config={
                                     "modeBarButtonsToRemove": [
                                         "select2d",
@@ -196,18 +223,42 @@ def layout(
                                     },
                                 },
                             ),
+                            ],
+                            visibleFrom="lg",
+                        ),
+
+                        # dmc.Box([
+                        #     dcc.Graph(figure=px.bar(dfff, x="continent", y="pop", title="Population by Continent"), id={"type": "graph", "index": "line"}),
+                        # ],
+                        # hiddenFrom="lg"
+                        # ),
+                        # dmc.BarChart(
+                        #     h=300,
+                        #     dataKey="month",
+                        #     data=data,
+                        #     series=[
+                        #         {"name": "Smartphones", "color": "violet.6"},
+                        #         {"name": "Laptops", "color": "blue.6"},
+                        #         {"name": "Tablets", "color": "teal.6"}
+                        #     ],
+                        #     tickLine="y",
+                        #     gridAxis="y",
+                        #     withXAxis=True,
+                        #     withYAxis=True,
+                        #     hiddenFrom="lg"
+                        # ),
+
                             dmc.Text(
                                 id="selected_date_range",
                                 size="sm"
                             ),
-                            # html.Div(
                             dmc.Box(
                                 id="distance_km"
                             ),
                             dmc.Box(
                                 id="number_of_tracks"
                             ),
-                        ]
+                        ],
                     ),
                 ],
                 mb=30,
@@ -217,7 +268,51 @@ def layout(
                 spacing={"base": 10, "sm": "xl"},
                 verticalSpacing={"base": "md", "sm": "xl"},
                 children=[
-                    html.Div(id="nice_stack"),
+                dag.AgGrid(
+                    id={"type": "ag-grid-themed", "index": "track_info"},
+
+                    columnDefs = [
+                        # If "Track" is a specific data field, add it here. 
+                        # Otherwise, it can be mapped to a name or ID field.
+                        {"field": "description", "headerName": "Track"},
+                        {"field": "start_date", "headerName": "Startdatum"},
+                        {"field": "end_date", "headerName": "Einddatum"},
+                        {
+                            "field": "total_distance_kilometers",
+                            "headerName": "Afstand",
+                            "valueFormatter": {"function": "d3.format(',.2f')(params.value) + ' km'"}
+                        },
+
+                        {
+                            "field": "total_duration_hours",
+                            "headerName": "Totale duur",
+                            "valueFormatter": {
+                                "function": """
+                                    if (params.value == null) return '';
+                                    const hours = Math.floor(params.value);
+                                    const minutes = Math.round((params.value - hours) * 60);
+                                    return hours + 'u ' + (minutes < 10 ? '0' + minutes : minutes) + 'm';
+                                """
+                            }
+                        },
+                        # {
+                        #     "field": "total_duration_hours",
+                        #     "headerName": "Totale duur",
+                        #     #"valueFormatter": {"function": "params.value + ' u'"}
+                        # },
+                        {
+                            "field": "average_speed_kmh",
+                            "headerName": "Gemiddelde snelheid",
+                            "valueFormatter": {"function": "d3.format('.1f')(params.value) + ' km/h'"}
+                        },
+                        {"field": "number_of_points", "headerName": "Aantal punten"},
+                    ],
+                    dashGridOptions={
+                        "enableCellTextSelection": True,
+                        "ensureDomOrder": True,
+                        "animateRows": False
+                    },
+                )
                 ],
                 mb=30,
             ),
@@ -237,7 +332,55 @@ def layout(
                 spacing={"base": 10, "sm": "xl"},
                 verticalSpacing={"base": "md", "sm": "xl"},
                 children=[
-                    html.Div(id="datatable1"),
+                dag.AgGrid(
+                    id={"type": "ag-grid-themed", "index": "datatable1"},
+                    columnDefs = [
+                        {
+                            "field": "path",
+                            "headerName": "Pad",
+                            "hide": True  # Vaak worden paden verborgen omdat ze lang zijn, maar je kunt dit op False zetten
+                        },
+                        {
+                            "field": "time",
+                            "headerName": "Tijd",
+                            # Optioneel: sorteer standaard op de meest recente tijd
+                            "sort": "desc"
+                        },
+                        {
+                            "field": "lat",
+                            "headerName": "Latitude",
+                            "valueFormatter": {"function": "params.value ? params.value.toFixed(6) : ''"}
+                        },
+                        {
+                            "field": "lon",
+                            "headerName": "Longitude",
+                            "valueFormatter": {"function": "params.value ? params.value.toFixed(6) : ''"}
+                        },
+                        {
+                            "field": "make",
+                            "headerName": "Merk",
+                            "filter": True
+                        },
+                        {
+                            "field": "model",
+                            "headerName": "Model",
+                            "filter": True
+                        },
+                        {
+                            "field": "image_description",
+                            "headerName": "Omschrijving",
+                            "flex": 2, # Geeft deze kolom meer ruimte omdat tekst vaak lang is
+                            "wrapText": True, # Zorgt dat lange tekst naar de volgende regel gaat
+                            "autoHeight": True # Past de rijhoogte aan op de tekst
+                        },
+                    ],
+                    dashGridOptions={
+                        "enableCellTextSelection": True,
+                        "ensureDomOrder": True,
+                        "animateRows": False
+                    },
+                    )
+                    # html.Div(id="datatable1"),
                 ],
                 mb=30,
             ),
@@ -250,9 +393,11 @@ layout = layout
 
 # Update the url
 @callback(
-    Output("url_test", "search"),
-    Input("graph_date_range", "figure"),
-    Input("graph_date_range", "relayoutData"),
+    Output("url_home", "search"),
+    Input({"type": "graph", "index": "graph_date_range"}, "figure"),
+    Input({"type": "graph", "index": "graph_date_range"}, "relayoutData"),
+    # Input("graph_date_range", "figure"),
+    # Input("graph_date_range", "relayoutData"),
     Input("map", "bounds"),
     Input("map", "center"),
     prevent_initial_call=True,
@@ -295,7 +440,8 @@ def update_url_from_slider(
 
 # Update the viewport of the map based on selected track
 @callback(
-    Output("map", "viewport"), Input("select_track", "value"), prevent_initial_call=True
+    Output("map", "viewport"),
+    Input("select_track", "value"), prevent_initial_call=True
 )
 def fly_to_selected_track(st):
     # center_lat=52
@@ -319,9 +465,11 @@ def fly_to_selected_track(st):
 
 # Update the date range of the graph range based on selected track
 @callback(
-    Output("graph_date_range", "figure", allow_duplicate=True),
+    Output({"type": "graph", "index": "graph_date_range"}, "figure", allow_duplicate=True),
+    # Output("graph_date_range", "figure", allow_duplicate=True),
     Input("select_track", "value"),
-    State("graph_date_range", "figure"),
+    State({"type": "graph", "index": "graph_date_range"}, "figure"),
+    # State("graph_date_range", "figure"),
     prevent_initial_call=True,
 )
 def update_range(st, graph_date_range):
@@ -351,8 +499,10 @@ def update_range(st, graph_date_range):
 # Get trackbook points clustered
 @callback(
     Output("df_clusters2", "children"),
-    Input("graph_date_range", "figure"),
-    Input("graph_date_range", "relayoutData"),
+    Input({"type": "graph", "index": "graph_date_range"}, "figure"),
+    Input({"type": "graph", "index": "graph_date_range"}, "relayoutData"),
+    # Input("graph_date_range", "figure"),
+    # Input("graph_date_range", "relayoutData"),
     Input("map", "bounds"),
     Input("map", "zoom"),
     prevent_initial_call=True,
@@ -459,8 +609,10 @@ def get_clusters_in_bbox_points(
 # Get image points clustered
 @callback(
     Output("df_clusters_images1", "children"),
-    Input("graph_date_range", "figure"),
-    Input("graph_date_range", "relayoutData"),
+    Input({"type": "graph", "index": "graph_date_range"}, "figure"),
+    Input({"type": "graph", "index": "graph_date_range"}, "relayoutData"),
+    # Input("graph_date_range", "figure"),
+    # Input("graph_date_range", "relayoutData"),
     Input("map", "bounds"),
     Input("map", "zoom"),
     prevent_initial_call=True,
@@ -525,8 +677,10 @@ def get_clusters_in_bbox(graph_date_range, graph_date_range_relayoutdata, bounds
 # Plot start points of track
 @callback(
     Output("start_points", "children"),
-    Input("graph_date_range", "figure"),
-    Input("graph_date_range", "relayoutData"),
+    Input({"type": "graph", "index": "graph_date_range"}, "figure"),
+    Input({"type": "graph", "index": "graph_date_range"}, "relayoutData"),
+    # Input("graph_date_range", "figure"),
+    # Input("graph_date_range", "relayoutData"),
     Input("map", "bounds"),
     Input("map", "zoom"),
     prevent_initial_call=True,
@@ -598,8 +752,10 @@ def get_clusters_in_bbox(graph_date_range, graph_date_range_relayoutdata, bounds
 # Plot end points of tracks
 @callback(
     Output("end_points", "children"),
-    Input("graph_date_range", "figure"),
-    Input("graph_date_range", "relayoutData"),
+    Input({"type": "graph", "index": "graph_date_range"}, "figure"),
+    Input({"type": "graph", "index": "graph_date_range"}, "relayoutData"),
+    # Input("graph_date_range", "figure"),
+    # Input("graph_date_range", "relayoutData"),
     Input("map", "bounds"),
     Input("map", "zoom"),
     prevent_initial_call=True,
@@ -659,9 +815,13 @@ def get_clusters_in_bbox(graph_date_range, graph_date_range_relayoutdata, bounds
 
 # Trackbook summary table
 @callback(
-    Output("nice_stack", "children"),
-    Input("graph_date_range", "figure"),
-    Input("graph_date_range", "relayoutData"),
+
+    # Output({"type": "ag-grid-themed", "index": "track_info"}, "columnDefs"),    # column names
+    Output({"type": "ag-grid-themed", "index": "track_info"}, "rowData"),       # df
+    Input({"type": "graph", "index": "graph_date_range"}, "figure"),
+    Input({"type": "graph", "index": "graph_date_range"}, "relayoutData"),
+    # Input("graph_date_range", "figure"),
+    # Input("graph_date_range", "relayoutData"),
     Input("map", "bounds"),
     Input("map", "zoom"),
     prevent_initial_call=True,
@@ -697,74 +857,21 @@ def summary(graph_date_range, graph_date_range_relayoutdata, bounds, zoom):
 
     if not df.empty:
 
-        result = [
-            dag.AgGrid(
-                rowData=df.to_dict("records"),
-                columnDefs=[{"field": i} for i in df.columns],
-            )
-            # dmc.Stack(
-            #     [
-            #         dmc.Text(f"Description {row['description']}"),
-            #         dmc.Text(f"Start {row['start_date']}"),
-            #     ],
-            #     align="center",
-            #     gap="xl",
-            # )
-            # for index, row in df.iterrows()
-            # WORKING:
-            # dmc.Card(
-            #     children=[
-            #         dmc.Text(
-            #             f"Description: {row['description']}",
-            #             size="sm",
-            #         ),
-            #         dmc.Text(
-            #             f"Start: {row['start_date']}",
-            #             size="sm",
-            #         ),
-            #     ],
-            #     withBorder=True,
-            #     shadow="sm",
-            #     radius="md",
-            #     w={"base": 200, "sm": 400, "lg": 500},
-            #     #w=450,
-            #     mb=10,
-            # )
-            # for index, row in df.iterrows()
-            # dl.Polygon(
-            #     # id="poly_id",
-            #     positions=row["boundary"],
-            #     color="blue",
-            #     opacity=0.15,
-            #     weight=2,
-            #     children=[
-            #         # dl.Tooltip(f"Index: {row['h3_2']}"),
-            #         # dl.Popup(f"Index: {row['h3_2']}, count: {row['cnt']}")
-            #         # dl.Popup(f"Count: {row['cnt']}")
-            #         dl.Popup(
-            #             children=[
-            #                 # html.P(f"Track: {row['description.item']}"), # Using untuple
-            #                 # html.P(f"Track: {row['description_top_app']}"),
-            #                 html.P(f"Count: {row['cnt']}"), # Paragraph for spacing
-            #                 # html.Small(f"Opacity: {row['cnt']}") # Smaller text
-            #             ]
-            #         )
-            #     ],
-            #     pathOptions={"fillOpacity": row["opacity"]},
-            # )
-            # for index, row in df.iterrows()
-        ]
+        # cd = [{"field": i} for i in df.columns]
+        rd = df.to_dict("records")
 
-        return result
+        return rd
     else:
-        return None
+        return []
 
 # Display total km
 @callback(
     Output("distance_km", "children"),
     Output("number_of_tracks", "children"),
-    Input("graph_date_range", "figure"),
-    Input("graph_date_range", "relayoutData"),
+    Input({"type": "graph", "index": "graph_date_range"}, "figure"),
+    Input({"type": "graph", "index": "graph_date_range"}, "relayoutData"),
+    # Input("graph_date_range", "figure"),
+    # Input("graph_date_range", "relayoutData"),
     Input("map", "bounds"),
     Input("map", "zoom"),
     prevent_initial_call=True,
@@ -818,10 +925,13 @@ def summary(graph_date_range, graph_date_range_relayoutdata, bounds, zoom):
 
 # Create image grid and table with image info
 @callback(
-    Output("datatable1", "children"),
+    Output({"type": "ag-grid-themed", "index": "datatable1"}, "rowData"),       # df
+    #Output("datatable1", "children"),
     Output("images1", "children"),
-    Input("graph_date_range", "figure"),
-    Input("graph_date_range", "relayoutData"),
+    Input({"type": "graph", "index": "graph_date_range"}, "figure"),
+    Input({"type": "graph", "index": "graph_date_range"}, "relayoutData"),
+    # Input("graph_date_range", "figure"),
+    # Input("graph_date_range", "relayoutData"),
     Input("map", "bounds"),  # map
     prevent_initial_call=True,
 )
@@ -855,10 +965,14 @@ def get_records(graph_date_range, graph_date_range_relayoutdata, bounds):
     if not df.empty:
         image_paths = df["path"].to_numpy()
 
-        table = dag.AgGrid(
-            rowData=df.to_dict("records"),
-            columnDefs=[{"field": i} for i in df.columns],
-        )
+        rd = df.to_dict("records")
+
+        # table = dag.AgGrid(
+        #     rowData=df.to_dict("records"),
+        #     columnDefs=[{"field": i} for i in df.columns],
+        #     # className="ag-theme-alpine-dark",
+        #     # id={"type": "ag-grid-themed", "index": "image_info"}
+        # )
 
         # table = dash_table.DataTable(
         #     data=df.to_dict("records"),
@@ -884,7 +998,7 @@ def get_records(graph_date_range, graph_date_range_relayoutdata, bounds):
                     )
                     for i, img in enumerate(image_paths)
                 ],
-                cols={"base": 4, "sm": 1, "lg": 4},
+                cols={"base": 4, "sm": 4, "lg": 4},
                 spacing={"base": 10, "sm": "xl"},
                 verticalSpacing={"base": "md", "sm": "xl"},
                 mb=30,
@@ -901,6 +1015,7 @@ def get_records(graph_date_range, graph_date_range_relayoutdata, bounds):
             # ),
             dmc.Modal(
                 id="image-modal",
+                centered=True,
                 # size="xl",
                 fullScreen=True,
                 children=dmc.Carousel(
@@ -917,31 +1032,53 @@ def get_records(graph_date_range, graph_date_range_relayoutdata, bounds):
                             # )
                             dmc.Image(
                                 src=row["path"],
+                                # w="auto",
+                                # h="auto",
+                                # fit="contain",
                                 style={
-                                    "width": "100vw",
-                                    "height": "100vh",
+                                    # 1. Constrain Vertical Size (e.g., 80% of viewport height)
+                                    "maxHeight": "80vh",
+                                    # 2. Constrain Horizontal Size (e.g., 90% of viewport width)
+                                    "maxWidth": "90vw",
+                                    # 3. Ensure the image scales down, not up, and maintains ratio
+                                    #"width": "auto",
+                                    #"height": "auto",
+                                    "display": "block",
+                                    "margin": "0 auto", # Center the image if it's smaller than the max
                                     "objectFit": "contain",
-                                },
+                                }
+                                # style={"maxHeight": "90vh", "width": "auto"}
+                                # style={
+                                #     "width": "100vw",
+                                #     "height": "100vh",
+                                #     "objectFit": "contain",
+                                # },
                             )
                         )
                         for index, row in df.iterrows()
                     ],
                     id="carousel",
                     withIndicators=False,
-                    loop=True,
+                    # loop=True,
+                    # slideSize={"base": "100%", "sm": "50%", "md": "33.333333%"},
+                    emblaOptions = {"loop": True, "align": "start"},
                 ),
             ),
         )
-        return table, images
+        return rd, images
     else:
-        return None, None
+        return [], None
 
 
 # Plot figure go.Scatter, count per day
 @callback(
-    Output("graph_date_range", "figure"),
-    Input("graph_date_range", "figure"),
-    Input("graph_date_range", "relayoutData"),
+    Output({"type": "graph", "index": "graph_date_range"}, "figure", allow_duplicate=True),
+    # Output({"type": "graph", "index": "graph_date_range"}, "figure"),
+    # Output("graph_date_range", "figure"),
+    Input({"type": "graph", "index": "graph_date_range"}, "figure"),
+    Input({"type": "graph", "index": "graph_date_range"}, "relayoutData"),
+    # Input("graph_date_range", "figure"),
+    # Input("graph_date_range", "relayoutData"),
     Input("map", "bounds"),
     Input("map", "zoom"),
     prevent_initial_call=True,
@@ -994,8 +1131,10 @@ def get_count_per_day(graph_date_range, graph_date_range_relayoutdata, bounds, z
 
 @callback(
     Output("selected_date_range", "children"),
-    Input("graph_date_range", "figure"),
-    Input("graph_date_range", "relayoutData"),
+    Input({"type": "graph", "index": "graph_date_range"}, "figure"),
+    Input({"type": "graph", "index": "graph_date_range"}, "relayoutData"),
+    # Input("graph_date_range", "figure"),
+    # Input("graph_date_range", "relayoutData"),
 )
 def print_data_range(graph_date_range, graph_date_range_relayoutdata):
 
@@ -1015,3 +1154,44 @@ def print_data_range(graph_date_range, graph_date_range_relayoutdata):
 def open_modal(n_clicks):
     index = ctx.triggered_id.index
     return True, index
+
+
+# AgGrid light/dark theme 
+@callback(
+    Output({"type": "ag-grid-themed", "index": ALL}, "className"),
+    # Output("dag-simple", "className"),
+    Input("color-scheme-toggle", "checked")
+)
+def update_theme(switch_on):
+    # return "ag-theme-alpine-dark" if switch_on else "ag-theme-alpine"
+
+    # Determine the theme string
+    theme = "ag-theme-alpine-dark" if switch_on else "ag-theme-alpine"
+
+    # Check how many outputs (grids) were matched by 'ALL'
+    count = len(ctx.outputs_list)
+
+    # Return a list containing the theme string repeated 'count' times
+    return [theme] * count
+
+
+# Plotly graphs light/dark theme
+@callback(
+    Output({"type": "graph", "index": ALL}, "figure"),
+    # Output({"type": "graph", "index": ALL}, "figure", allow_duplicate=True),
+    Input("color-scheme-toggle", "checked"),
+    State({"type": "graph", "index": ALL}, "id"),
+    # prevent_initial_call=True,
+)
+def update_figure(switch_on, ids):
+    # template must be template object rather than just the template string name
+    template = pio.templates["mantine_dark"] if switch_on else pio.templates["mantine_light"]
+    patched_figures = []
+    for i in ids:
+        patched_fig = Patch()
+        patched_fig["layout"]["template"] = template
+        patched_figures.append(patched_fig)
+
+    return patched_figures
+
+

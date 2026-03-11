@@ -82,27 +82,27 @@ def decode_binary(tag, value):
     return value
 
 
-def dms_to_decimal(degrees, minutes, seconds, reference):
-    """
-    Converts Degrees Minutes Seconds (DMS) coordinates to a decimal value.
-
-    Args:
-        degrees: Degrees value (int).
-        minutes: Minutes value (int).
-        seconds: Seconds value (float).
-        reference: Hemisphere reference (e.g., 'N' or 'S').
-
-    Returns:
-        Decimal representation of the latitude/longitude.
-    """
-    decimal_minutes = minutes / 60 + seconds / 3600
-    decimal_value = degrees + decimal_minutes
-
-    # Handle negative values for South or West hemispheres
-    if reference in ("S", "W"):
-        decimal_value *= -1
-
-    return decimal_value
+# def dms_to_decimal(degrees, minutes, seconds, reference):
+#     """
+#     Converts Degrees Minutes Seconds (DMS) coordinates to a decimal value.
+# 
+#     Args:
+#         degrees: Degrees value (int).
+#         minutes: Minutes value (int).
+#         seconds: Seconds value (float).
+#         reference: Hemisphere reference (e.g., 'N' or 'S').
+# 
+#     Returns:
+#         Decimal representation of the latitude/longitude.
+#     """
+#     decimal_minutes = minutes / 60 + seconds / 3600
+#     decimal_value = degrees + decimal_minutes
+# 
+#     # Handle negative values for South or West hemispheres
+#     if reference in ("S", "W"):
+#         decimal_value *= -1
+# 
+#     return decimal_value
 
 
 def dms_to_decimal(degrees, minutes, seconds, reference):
