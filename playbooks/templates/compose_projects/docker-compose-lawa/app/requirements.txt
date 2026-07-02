@@ -5,6 +5,7 @@ dash-extensions==2.0.4
 dash-iconify==0.1.2
 plotly==6.5.1
 h3==4.4.1
+dash-ag-grid==32.3.4
 pandas
 clickhouse-connect
 Jinja2
@@ -13,4 +14,3 @@ boto3
 pillow
 sshfs
 webdav4
-dash-ag-grid

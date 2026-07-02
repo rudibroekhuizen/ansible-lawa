@@ -82,6 +82,7 @@ services:
   app:
     build:
       context: ./app
+    restart: unless-stopped
     networks:
       # - web
       - backend
