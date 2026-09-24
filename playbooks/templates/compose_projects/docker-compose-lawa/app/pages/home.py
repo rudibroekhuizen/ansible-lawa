@@ -18,7 +18,8 @@ from dash import (
     register_page,
     Patch,
     no_update,
-    ALL
+    ALL,
+    clientside_callback
 )
 import os
 import dash_leaflet as dl
@@ -66,6 +67,17 @@ dff = px.data.gapminder()
 #dff = pd.read_csv("https://raw.githubusercontent.com/plotly/datasets/master/ag-grid/space-mission-data.csv")
 
 dfff = dff[dff.year == 2007]
+
+# AgGrid light/dark theme 
+theme =  {
+    "function": (
+        "themeQuartz.withParams({"
+        "accentColor: 'var(--mantine-primary-color-filled)', "
+        "fontFamily: 'var(--mantine-font-family)', "
+        "headerFontWeight: 'bold'"
+        "})"
+    )
+}
 
 
 def layout(
@@ -310,7 +322,8 @@ def layout(
                     dashGridOptions={
                         "enableCellTextSelection": True,
                         "ensureDomOrder": True,
-                        "animateRows": False
+                        "animateRows": False,
+                        "theme": theme
                     },
                 )
                 ],
@@ -377,7 +390,8 @@ def layout(
                     dashGridOptions={
                         "enableCellTextSelection": True,
                         "ensureDomOrder": True,
-                        "animateRows": False
+                        "animateRows": False,
+                        "theme": theme
                     },
                     )
                     # html.Div(id="datatable1"),
@@ -1156,23 +1170,23 @@ def open_modal(n_clicks):
     return True, index
 
 
-# AgGrid light/dark theme 
-@callback(
-    Output({"type": "ag-grid-themed", "index": ALL}, "className"),
-    # Output("dag-simple", "className"),
-    Input("color-scheme-toggle", "checked")
-)
-def update_theme(switch_on):
-    # return "ag-theme-alpine-dark" if switch_on else "ag-theme-alpine"
-
-    # Determine the theme string
-    theme = "ag-theme-alpine-dark" if switch_on else "ag-theme-alpine"
-
-    # Check how many outputs (grids) were matched by 'ALL'
-    count = len(ctx.outputs_list)
-
-    # Return a list containing the theme string repeated 'count' times
-    return [theme] * count
+# # AgGrid light/dark theme 
+# @callback(
+#     Output({"type": "ag-grid-themed", "index": ALL}, "className"),
+#     # Output("dag-simple", "className"),
+#     Input("color-scheme-toggle", "checked")
+# )
+# def update_theme(switch_on):
+#     # return "ag-theme-alpine-dark" if switch_on else "ag-theme-alpine"
+# 
+#     # Determine the theme string
+#     theme = "ag-theme-alpine-dark" if switch_on else "ag-theme-alpine"
+# 
+#     # Check how many outputs (grids) were matched by 'ALL'
+#     count = len(ctx.outputs_list)
+# 
+#     # Return a list containing the theme string repeated 'count' times
+#     return [theme] * count
 
 
 # Plotly graphs light/dark theme
@@ -1195,3 +1209,15 @@ def update_figure(switch_on, ids):
     return patched_figures
 
 
+# AgGrid light/dark theme 
+clientside_callback(
+    """
+    (switchOn) => {
+       document.documentElement.setAttribute('data-ag-theme-mode', switchOn ? 'dark' : 'light');
+       return window.dash_clientside.no_update;
+    }
+    """,
+    # Output("dummy-output", "children"),
+    Output({"type": "ag-grid-themed", "index": ALL}, "children"),
+    Input("color-scheme-toggle", "checked")
+)
