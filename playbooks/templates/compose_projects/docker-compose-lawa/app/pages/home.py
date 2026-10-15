@@ -40,7 +40,7 @@ from dash.exceptions import PreventUpdate
 import urllib.parse
 import dash_ag_grid as dag
 import plotly.io as pio
-
+import feffery_antd_components as fac
 
 from utils import (
     get_clickhouse_client,
@@ -62,12 +62,6 @@ dash.register_page(
 
 dmc.add_figure_templates(default="mantine_light")
 
-dff = px.data.gapminder()
-
-#dff = pd.read_csv("https://raw.githubusercontent.com/plotly/datasets/master/ag-grid/space-mission-data.csv")
-
-dfff = dff[dff.year == 2007]
-
 # AgGrid light/dark theme 
 theme =  {
     "function": (
@@ -79,7 +73,6 @@ theme =  {
     )
 }
 
-
 def layout(
     start_date="2024-01-01",
     end_date="2027-01-01",
@@ -89,7 +82,6 @@ def layout(
     max_lon=None,
     center_lat=52.8503,
     center_lon=4.3517,
-    # data = ["Pandas", "NumPy", "TensorFlow", "PyTorch"]
 ):
     return html.Div(
         [
@@ -138,7 +130,7 @@ def layout(
                         # mih=400,
                         # align="center",
                         gap="xl",
-                    ),  # Closing parenthesis for dmc.Stack
+                    ),
                     dmc.Stack(
                         [
                         dmc.Box(
@@ -238,28 +230,6 @@ def layout(
                             ],
                             visibleFrom="lg",
                         ),
-
-                        # dmc.Box([
-                        #     dcc.Graph(figure=px.bar(dfff, x="continent", y="pop", title="Population by Continent"), id={"type": "graph", "index": "line"}),
-                        # ],
-                        # hiddenFrom="lg"
-                        # ),
-                        # dmc.BarChart(
-                        #     h=300,
-                        #     dataKey="month",
-                        #     data=data,
-                        #     series=[
-                        #         {"name": "Smartphones", "color": "violet.6"},
-                        #         {"name": "Laptops", "color": "blue.6"},
-                        #         {"name": "Tablets", "color": "teal.6"}
-                        #     ],
-                        #     tickLine="y",
-                        #     gridAxis="y",
-                        #     withXAxis=True,
-                        #     withYAxis=True,
-                        #     hiddenFrom="lg"
-                        # ),
-
                             dmc.Text(
                                 id="selected_date_range",
                                 size="sm"
@@ -351,12 +321,11 @@ def layout(
                         {
                             "field": "path",
                             "headerName": "Pad",
-                            "hide": True  # Vaak worden paden verborgen omdat ze lang zijn, maar je kunt dit op False zetten
+                            "hide": True
                         },
                         {
                             "field": "time",
                             "headerName": "Tijd",
-                            # Optioneel: sorteer standaard op de meest recente tijd
                             "sort": "desc"
                         },
                         {
@@ -382,9 +351,9 @@ def layout(
                         {
                             "field": "image_description",
                             "headerName": "Omschrijving",
-                            "flex": 2, # Geeft deze kolom meer ruimte omdat tekst vaak lang is
-                            "wrapText": True, # Zorgt dat lange tekst naar de volgende regel gaat
-                            "autoHeight": True # Past de rijhoogte aan op de tekst
+                            "flex": 2,
+                            "wrapText": True,
+                            "autoHeight": True
                         },
                     ],
                     dashGridOptions={
@@ -1003,81 +972,112 @@ def get_records(graph_date_range, graph_date_range_relayoutdata, bounds):
         #     },
         #     style_header={"fontWeight": "bold"},
         # )
-        images = (
-            dmc.SimpleGrid(
-                [
-                    html.Div(
-                        dmc.Image(src=img, style={"cursor": "pointer"}),
-                        id={"type": "img", "index": i},
+
+
+        # images = (
+        #     dmc.SimpleGrid(
+        #         [
+        #             html.Div(
+        #                 dmc.Image(src=img, style={"cursor": "pointer"}),
+        #                 id={"type": "img", "index": i},
+        #             )
+        #             for i, img in enumerate(image_paths)
+        #         ],
+        #         cols={"base": 4, "sm": 4, "lg": 4},
+        #         spacing={"base": 10, "sm": "xl"},
+        #         verticalSpacing={"base": "md", "sm": "xl"},
+        #         mb=30,
+        #     ),
+        #     # dmc.Modal(
+        #     #     id="image-modal",
+        #     #     size="xl",
+        #     #     children=dmc.Carousel(
+        #     #         [dmc.CarouselSlide(dmc.Image(src=img)) for img in image_paths],
+        #     #         id="carousel",
+        #     #         withIndicators=False,
+        #     #         loop=True,
+        #     #     ),
+        #     # ),
+        #     dmc.Modal(
+        #         id="image-modal",
+        #         centered=True,
+        #         # size="xl",
+        #         fullScreen=True,
+        #         children=dmc.Carousel(
+        #             [
+        #                 dmc.CarouselSlide(
+        #                     # dmc.Stack(
+        #                     #     [
+        #                     #         dmc.Image(src=row["path"]),
+        #                     #         dmc.Text(f"Date: {row['time']}"),
+        #                     #         dmc.Text(f"Model: {row['model']}"),
+        #                     #     ],
+        #                     #     align="center",
+        #                     #     gap="xl",
+        #                     # )
+        #                     dmc.Image(
+        #                         src=row["path"],
+        #                         # w="auto",
+        #                         # h="auto",
+        #                         # fit="contain",
+        #                         style={
+        #                             # 1. Constrain Vertical Size (e.g., 80% of viewport height)
+        #                             "maxHeight": "80vh",
+        #                             # 2. Constrain Horizontal Size (e.g., 90% of viewport width)
+        #                             "maxWidth": "90vw",
+        #                             # 3. Ensure the image scales down, not up, and maintains ratio
+        #                             #"width": "auto",
+        #                             #"height": "auto",
+        #                             "display": "block",
+        #                             "margin": "0 auto", # Center the image if it's smaller than the max
+        #                             "objectFit": "contain",
+        #                         }
+        #                         # style={"maxHeight": "90vh", "width": "auto"}
+        #                         # style={
+        #                         #     "width": "100vw",
+        #                         #     "height": "100vh",
+        #                         #     "objectFit": "contain",
+        #                         # },
+        #                     )
+        #                 )
+        #                 for index, row in df.iterrows()
+        #             ],
+        #             id="carousel",
+        #             withIndicators=False,
+        #             # loop=True,
+        #             # slideSize={"base": "100%", "sm": "50%", "md": "33.333333%"},
+        #             emblaOptions = {"loop": True, "align": "start"},
+        #         ),
+        #     ),
+        # )
+
+        images = fac.AntdImageGroup(
+            fac.AntdRow(
+                gutter=[16, 16], # [horizontale, verticale] ruimte tussen afbeeldingen
+                style={"marginBottom": "30px"},
+                children=[
+                    fac.AntdCol(
+                        fac.AntdImage(
+                            src=row["path"],
+                            height=180,
+                            style={
+                                "objectFit": "cover",
+                                "width": "100%",
+                                "borderRadius": "8px",
+                                "cursor": "pointer",
+                            },
+                            preview={"mask": False},
+                        ),
+                        # Responsive grid kolommen (24-koloms systeem):
+                        # 4 kolommen per rij op desktop (24/6 = 4)
+                        # 2 kolommen per rij op mobiel (24/12 = 2)
+                        xs=12,
+                        sm=6,
+                        md=3,
                     )
-                    for i, img in enumerate(image_paths)
+                    for index, row in df.iterrows()
                 ],
-                cols={"base": 4, "sm": 4, "lg": 4},
-                spacing={"base": 10, "sm": "xl"},
-                verticalSpacing={"base": "md", "sm": "xl"},
-                mb=30,
-            ),
-            # dmc.Modal(
-            #     id="image-modal",
-            #     size="xl",
-            #     children=dmc.Carousel(
-            #         [dmc.CarouselSlide(dmc.Image(src=img)) for img in image_paths],
-            #         id="carousel",
-            #         withIndicators=False,
-            #         loop=True,
-            #     ),
-            # ),
-            dmc.Modal(
-                id="image-modal",
-                centered=True,
-                # size="xl",
-                fullScreen=True,
-                children=dmc.Carousel(
-                    [
-                        dmc.CarouselSlide(
-                            # dmc.Stack(
-                            #     [
-                            #         dmc.Image(src=row["path"]),
-                            #         dmc.Text(f"Date: {row['time']}"),
-                            #         dmc.Text(f"Model: {row['model']}"),
-                            #     ],
-                            #     align="center",
-                            #     gap="xl",
-                            # )
-                            dmc.Image(
-                                src=row["path"],
-                                # w="auto",
-                                # h="auto",
-                                # fit="contain",
-                                style={
-                                    # 1. Constrain Vertical Size (e.g., 80% of viewport height)
-                                    "maxHeight": "80vh",
-                                    # 2. Constrain Horizontal Size (e.g., 90% of viewport width)
-                                    "maxWidth": "90vw",
-                                    # 3. Ensure the image scales down, not up, and maintains ratio
-                                    #"width": "auto",
-                                    #"height": "auto",
-                                    "display": "block",
-                                    "margin": "0 auto", # Center the image if it's smaller than the max
-                                    "objectFit": "contain",
-                                }
-                                # style={"maxHeight": "90vh", "width": "auto"}
-                                # style={
-                                #     "width": "100vw",
-                                #     "height": "100vh",
-                                #     "objectFit": "contain",
-                                # },
-                            )
-                        )
-                        for index, row in df.iterrows()
-                    ],
-                    id="carousel",
-                    withIndicators=False,
-                    # loop=True,
-                    # slideSize={"base": "100%", "sm": "50%", "md": "33.333333%"},
-                    emblaOptions = {"loop": True, "align": "start"},
-                ),
-            ),
+            )
         )
         return rd, images
     else:
