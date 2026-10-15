@@ -6,6 +6,7 @@ dash-iconify==0.1.2
 plotly==6.5.1
 h3==4.4.1
 dash-ag-grid==35.2.0
+feffery-antd-components==0.4.6
 pandas
 clickhouse-connect
 Jinja2
