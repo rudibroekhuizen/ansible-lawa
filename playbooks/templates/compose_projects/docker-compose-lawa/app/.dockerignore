@@ -1,0 +1,9 @@
+# Voorkom dat lokale omgevingen en caches in de image belanden (COPY . .)
+# dash-mantine-components komt nu uit GitHub (zie Dockerfile), de lokale
+# checkout hoeft niet in de build context
+dash-mantine-components
+venv
+node_modules
+__pycache__
+**/__pycache__
+*.pyc

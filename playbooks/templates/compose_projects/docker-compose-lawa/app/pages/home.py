@@ -40,7 +40,6 @@ from dash.exceptions import PreventUpdate
 import urllib.parse
 import dash_ag_grid as dag
 import plotly.io as pio
-import feffery_antd_components as fac
 
 from utils import (
     get_clickhouse_client,
@@ -300,15 +299,12 @@ def layout(
                 mb=30,
             ),
             html.Div(id="images1"),
-            dmc.Text(
-                "A nonexistent object was used in an `Output` of a Dash callback",
-                id="carousel",
-                style={"display": "none"},
-            ),
-            dmc.Text(
-                "A nonexistent object was used in an `Output` of a Dash callback",
-                id="image-modal",
-                style={"display": "none"},
+            dmc.Lightbox(
+                id="lightbox",
+                withZoom=True,
+                withThumbnails=True,
+                withFullscreen=True,
+                withDownload=True,
             ),
             dmc.SimpleGrid(
                 cols={"base": 1, "sm": 1, "lg": 1},
@@ -911,6 +907,7 @@ def summary(graph_date_range, graph_date_range_relayoutdata, bounds, zoom):
     Output({"type": "ag-grid-themed", "index": "datatable1"}, "rowData"),       # df
     #Output("datatable1", "children"),
     Output("images1", "children"),
+    Output("lightbox", "slides"),
     Input({"type": "graph", "index": "graph_date_range"}, "figure"),
     Input({"type": "graph", "index": "graph_date_range"}, "relayoutData"),
     # Input("graph_date_range", "figure"),
@@ -946,142 +943,38 @@ def get_records(graph_date_range, graph_date_range_relayoutdata, bounds):
     # df = pd.DataFrame(result.result_rows, columns=column_names)
 
     if not df.empty:
-        image_paths = df["path"].to_numpy()
-
         rd = df.to_dict("records")
 
-        # table = dag.AgGrid(
-        #     rowData=df.to_dict("records"),
-        #     columnDefs=[{"field": i} for i in df.columns],
-        #     # className="ag-theme-alpine-dark",
-        #     # id={"type": "ag-grid-themed", "index": "image_info"}
-        # )
+        # Slides voor de lightbox, met tijd als caption
+        slides = [
+            {
+                "src": row["path"],
+                "alt": f"Foto {index + 1}",
+                "caption": f"{row['time']}" if pd.notna(row["time"]) else None,
+            }
+            for index, row in df.iterrows()
+        ]
 
-        # table = dash_table.DataTable(
-        #     data=df.to_dict("records"),
-        #     columns=[{"name": i, "id": i} for i in df.columns],
-        #     style_table={"overflowX": "auto"},
-        #     style_cell={
-        #         "whiteSpace": "normal",
-        #         "height": "auto",
-        #         "font-family": "'Inter', sans-serif",
-        #         "font-size": "14px",
-        #         "padding": "0 1rem",
-        #         "text-align": "left",
-        #         "border": "1px solid #dee2e6",
-        #     },
-        #     style_header={"fontWeight": "bold"},
-        # )
-
-
-        # images = (
-        #     dmc.SimpleGrid(
-        #         [
-        #             html.Div(
-        #                 dmc.Image(src=img, style={"cursor": "pointer"}),
-        #                 id={"type": "img", "index": i},
-        #             )
-        #             for i, img in enumerate(image_paths)
-        #         ],
-        #         cols={"base": 4, "sm": 4, "lg": 4},
-        #         spacing={"base": 10, "sm": "xl"},
-        #         verticalSpacing={"base": "md", "sm": "xl"},
-        #         mb=30,
-        #     ),
-        #     # dmc.Modal(
-        #     #     id="image-modal",
-        #     #     size="xl",
-        #     #     children=dmc.Carousel(
-        #     #         [dmc.CarouselSlide(dmc.Image(src=img)) for img in image_paths],
-        #     #         id="carousel",
-        #     #         withIndicators=False,
-        #     #         loop=True,
-        #     #     ),
-        #     # ),
-        #     dmc.Modal(
-        #         id="image-modal",
-        #         centered=True,
-        #         # size="xl",
-        #         fullScreen=True,
-        #         children=dmc.Carousel(
-        #             [
-        #                 dmc.CarouselSlide(
-        #                     # dmc.Stack(
-        #                     #     [
-        #                     #         dmc.Image(src=row["path"]),
-        #                     #         dmc.Text(f"Date: {row['time']}"),
-        #                     #         dmc.Text(f"Model: {row['model']}"),
-        #                     #     ],
-        #                     #     align="center",
-        #                     #     gap="xl",
-        #                     # )
-        #                     dmc.Image(
-        #                         src=row["path"],
-        #                         # w="auto",
-        #                         # h="auto",
-        #                         # fit="contain",
-        #                         style={
-        #                             # 1. Constrain Vertical Size (e.g., 80% of viewport height)
-        #                             "maxHeight": "80vh",
-        #                             # 2. Constrain Horizontal Size (e.g., 90% of viewport width)
-        #                             "maxWidth": "90vw",
-        #                             # 3. Ensure the image scales down, not up, and maintains ratio
-        #                             #"width": "auto",
-        #                             #"height": "auto",
-        #                             "display": "block",
-        #                             "margin": "0 auto", # Center the image if it's smaller than the max
-        #                             "objectFit": "contain",
-        #                         }
-        #                         # style={"maxHeight": "90vh", "width": "auto"}
-        #                         # style={
-        #                         #     "width": "100vw",
-        #                         #     "height": "100vh",
-        #                         #     "objectFit": "contain",
-        #                         # },
-        #                     )
-        #                 )
-        #                 for index, row in df.iterrows()
-        #             ],
-        #             id="carousel",
-        #             withIndicators=False,
-        #             # loop=True,
-        #             # slideSize={"base": "100%", "sm": "50%", "md": "33.333333%"},
-        #             emblaOptions = {"loop": True, "align": "start"},
-        #         ),
-        #     ),
-        # )
-
-        images = fac.AntdImageGroup(
-            fac.AntdRow(
-                gutter=[16, 16], # [horizontale, verticale] ruimte tussen afbeeldingen
-                style={"marginBottom": "30px"},
-                children=[
-                    fac.AntdCol(
-                        fac.AntdImage(
-                            src=row["path"],
-                            height=180,
-                            style={
-                                "objectFit": "cover",
-                                "width": "100%",
-                                "borderRadius": "8px",
-                                "cursor": "pointer",
-                            },
-                            preview={"mask": False},
-                        ),
-                        # Responsive grid kolommen (24-koloms systeem):
-                        # 4 kolommen per rij op desktop (24/6 = 4)
-                        # 2 kolommen per rij op mobiel (24/12 = 2)
-                        xs=12,
-                        sm=6,
-                        md=3,
-                    )
-                    for index, row in df.iterrows()
-                ],
-            )
+        images = dmc.SimpleGrid(
+            [
+                html.Div(
+                    dmc.Image(src=row["path"], h=180, radius="md", fit="cover"),
+                    id={"type": "thumb", "index": index},
+                    style={"cursor": "pointer"},
+                )
+                for index, row in df.iterrows()
+            ],
+            # Responsive grid, vertaald van het antd 24-koloms systeem:
+            # < 768px: 2 per rij, 768-992px: 4, 992-1200px: 6, >= 1200px: 8
+            cols={"base": 2, "sm": 4, "md": 6, "lg": 8},
+            spacing={"base": 10, "sm": "xl"},
+            verticalSpacing={"base": "md", "sm": "xl"},
+            mb=30,
         )
-        return rd, images
+        return rd, images, slides
     else:
-        return [], None
+        return [], None, []
+
 
 
 # Plot figure go.Scatter, count per day
@@ -1160,13 +1053,18 @@ def print_data_range(graph_date_range, graph_date_range_relayoutdata):
 
 
 @callback(
-    Output("image-modal", "opened"),
-    Output("carousel", "initialSlide"),
-    Input({"type": "img", "index": dash.ALL}, "n_clicks"),
+    Output("lightbox", "opened"),
+    Output("lightbox", "currentIndex"),
+    Input({"type": "thumb", "index": ALL}, "n_clicks"),
     prevent_initial_call=True,
 )
-def open_modal(n_clicks):
-    index = ctx.triggered_id.index
+def open_lightbox(n_clicks):
+    # Bij een nieuwe grid-render (nieuwe set thumbs) vuurt deze pattern-matching
+    # callback ook mee; alleen openen bij een echte klik op een foto.
+    triggered = ctx.triggered
+    if not triggered or not triggered[0]["value"]:
+        return no_update, no_update
+    index = ctx.triggered_id["index"]
     return True, index
 
 
@@ -1209,7 +1107,7 @@ def update_figure(switch_on, ids):
     return patched_figures
 
 
-# AgGrid light/dark theme 
+# AgGrid light/dark theme
 clientside_callback(
     """
     (switchOn) => {
@@ -1218,6 +1116,6 @@ clientside_callback(
     }
     """,
     # Output("dummy-output", "children"),
-    Output({"type": "ag-grid-themed", "index": ALL}, "children"),
+    Output({"type": "ag-grid-themed", "index": ALL}, "className"),
     Input("color-scheme-toggle", "checked")
 )
