@@ -50,6 +50,7 @@ services:
       # - "9000:9000" # ative clickhouse client
       - "8123:8123" # for HTML client
     networks:
+      - web
       - backend
     volumes:
       #- clickhouse_data:/var/lib/clickhouse
@@ -69,6 +70,7 @@ services:
       - WEBDAV_USER
       - WEBDAV_PASSWORD
     networks:
+      - web
       - backend
     ports:
       - "5432:5432"
@@ -82,6 +84,9 @@ services:
   app:
     build:
       context: ./app
+      args:
+        DMC_REPO: ${DMC_REPO:-https://github.com/rudibroekhuizen/dash-mantine-components}
+        DMC_BRANCH: ${DMC_BRANCH:-add-lightbox}
     restart: unless-stopped
     networks:
       # - web

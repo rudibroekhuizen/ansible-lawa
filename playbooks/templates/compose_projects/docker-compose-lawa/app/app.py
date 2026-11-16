@@ -19,6 +19,9 @@ from dash import (
     ALL
 )
 
+# DMC v3 requires React 19
+_dash_renderer._set_react_version("19.2.4")
+
 # import os
 import dash_leaflet as dl
 from dash import dash_table
@@ -79,7 +82,7 @@ app.layout = dmc.MantineProvider(
                                     dmc.Burger(
                                         id="burger",
                                         size="sm",
-                                        hiddenFrom="sm",
+                                        hiddenFrom="md",
                                         opened=False,
                                     ),
                                     # dmc.Image(src=logo, h=40, flex=0),
@@ -151,7 +154,7 @@ app.layout = dmc.MantineProvider(
             padding="md",
             navbar={
                 "width": 300,
-                "breakpoint": "sm",
+                "breakpoint": "md",
                 "collapsed": {"mobile": True},
             },
             id="appshell",
